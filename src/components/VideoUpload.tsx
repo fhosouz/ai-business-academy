@@ -48,7 +48,9 @@ const VideoUpload = ({ onVideoUploaded }: VideoUploadProps) => {
 
     setUploading(true);
     try {
-      const fileName = `${Date.now()}-${selectedFile.name}`;
+      // Clean filename and add timestamp
+      const cleanFileName = selectedFile.name.replace(/[^a-zA-Z0-9.-]/g, '-').toLowerCase();
+      const fileName = `${Date.now()}-${cleanFileName}`;
       const filePath = `lessons/${fileName}`;
 
       const { error: uploadError } = await supabase.storage

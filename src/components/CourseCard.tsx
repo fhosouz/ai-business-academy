@@ -1,9 +1,11 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Clock, BookOpen, User, Check } from "lucide-react";
+import { Clock, BookOpen, User, Check, Play } from "lucide-react";
+import VideoPlayer from "./VideoPlayer";
 
 interface Course {
   id: number;
@@ -24,6 +26,13 @@ interface CourseCardProps {
 }
 
 const CourseCard = ({ course, showFullDetails = false }: CourseCardProps) => {
+  const [showVideo, setShowVideo] = useState(false);
+
+  const handleWatchVideo = () => {
+    if (course.title === "IA Generativa para Negócios") {
+      setShowVideo(true);
+    }
+  };
   const getLevelColor = (level: string) => {
     switch (level) {
       case "Iniciante": return "bg-green-100 text-green-800";
@@ -34,7 +43,8 @@ const CourseCard = ({ course, showFullDetails = false }: CourseCardProps) => {
   };
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden">
+    <>
+      <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden">
       {/* Course Image */}
       <div className="relative h-48 overflow-hidden">
         <img
@@ -84,7 +94,15 @@ const CourseCard = ({ course, showFullDetails = false }: CourseCardProps) => {
         )}
 
         <div className="flex gap-2">
-          {course.progress > 0 ? (
+          {course.title === "IA Generativa para Negócios" ? (
+            <Button 
+              onClick={handleWatchVideo}
+              className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+            >
+              <Play className="w-4 h-4 mr-2" />
+              Assistir Vídeo
+            </Button>
+          ) : course.progress > 0 ? (
             <Button className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
               Continuar
             </Button>
@@ -109,6 +127,15 @@ const CourseCard = ({ course, showFullDetails = false }: CourseCardProps) => {
         )}
       </CardContent>
     </Card>
+
+    {showVideo && (
+      <VideoPlayer
+        videoFileName="introducao"
+        title="Introdução à Inteligência Artificial"
+        onClose={() => setShowVideo(false)}
+      />
+    )}
+  </>
   );
 };
 
