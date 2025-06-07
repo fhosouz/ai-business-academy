@@ -5,12 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Users, Calendar, Clock, Home, Search, User, MessageSquare, Check } from "lucide-react";
+import { BookOpen, Users, Calendar, Clock, Home, Search, User, MessageSquare, Check, Settings } from "lucide-react";
 import Header from "@/components/Header";
 import CourseCard from "@/components/CourseCard";
 import ProgressStats from "@/components/ProgressStats";
 import TrendsSection from "@/components/TrendsSection";
 import ChatSupport from "@/components/ChatSupport";
+import LessonManager from "@/components/LessonManager";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -78,7 +79,7 @@ const Index = () => {
       
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8">
+          <TabsList className="grid w-full grid-cols-6 mb-8">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <Home className="w-4 h-4" />
               Dashboard
@@ -90,6 +91,10 @@ const Index = () => {
             <TabsTrigger value="trends" className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               Tendências
+            </TabsTrigger>
+            <TabsTrigger value="admin" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Admin
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="w-4 h-4" />
@@ -170,6 +175,17 @@ const Index = () => {
 
           <TabsContent value="trends">
             <TrendsSection />
+          </TabsContent>
+
+          <TabsContent value="admin" className="space-y-8">
+            <div className="flex justify-between items-center">
+              <h1 className="text-3xl font-bold">Administração de Conteúdo</h1>
+            </div>
+            
+            <LessonManager 
+              courseId={1} 
+              courseName="IA Generativa para Negócios" 
+            />
           </TabsContent>
 
           <TabsContent value="profile">

@@ -9,7 +9,66 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      customers: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          customer_name: string | null
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          id?: number
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          id?: number
+        }
+        Relationships: []
+      }
+      lessons: {
+        Row: {
+          course_id: number
+          created_at: string
+          description: string | null
+          id: string
+          is_free: boolean | null
+          order_index: number
+          title: string
+          updated_at: string
+          video_duration: number | null
+          video_url: string | null
+        }
+        Insert: {
+          course_id: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_free?: boolean | null
+          order_index?: number
+          title: string
+          updated_at?: string
+          video_duration?: number | null
+          video_url?: string | null
+        }
+        Update: {
+          course_id?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_free?: boolean | null
+          order_index?: number
+          title?: string
+          updated_at?: string
+          video_duration?: number | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
