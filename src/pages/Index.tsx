@@ -16,6 +16,7 @@ import AdminManager from "@/components/AdminManager";
 import CategoryGrid from "@/components/CategoryGrid";
 import CategoryLessons from "@/components/CategoryLessons";
 import LessonPlayer from "@/components/LessonPlayer";
+import { Lesson } from "@/components/lesson/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -24,7 +25,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [coursesView, setCoursesView] = useState<'categories' | 'lessons' | 'player'>('categories');
   const [selectedCategory, setSelectedCategory] = useState<{ id: number; name: string } | null>(null);
-  const [selectedLesson, setSelectedLesson] = useState<any>(null);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [adminView, setAdminView] = useState<'lessons' | 'admins'>('lessons');
   const { toast } = useToast();
@@ -58,7 +59,13 @@ const Index = () => {
     setCoursesView('lessons');
   };
 
-  const handleLessonSelect = (lesson: any) => {
+  const handleLessonSelect = (lesson: Lesson) => {
+    console.log('📥 handleLessonSelect recebeu:', {
+      id: lesson.id,
+      title: lesson.title,
+      video_url: lesson.video_url,
+      hasVideo: !!lesson.video_url
+    });
     setSelectedLesson(lesson);
     setCoursesView('player');
   };

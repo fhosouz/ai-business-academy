@@ -19,6 +19,13 @@ interface LessonPlayerProps {
 }
 
 const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
+  console.log('🎬 LessonPlayer recebeu lesson:', {
+    id: lesson.id,
+    title: lesson.title,
+    video_url: lesson.video_url,
+    hasVideo: !!lesson.video_url
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
