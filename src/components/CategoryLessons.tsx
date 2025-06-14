@@ -6,6 +6,7 @@ import { ArrowLeft, Play, Clock, CheckCircle, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import BadgeGenerator from "@/components/BadgeGenerator";
 
 interface Lesson {
   id: string;
@@ -28,6 +29,7 @@ const CategoryLessons = ({ categoryId, categoryName, onBack, onLessonSelect }: C
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [lessonsProgress, setLessonsProgress] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -35,6 +37,7 @@ const CategoryLessons = ({ categoryId, categoryName, onBack, onLessonSelect }: C
     fetchLessons();
     if (user) {
       fetchLessonsProgress();
+      fetchUserProfile();
     }
   }, [categoryId, user]);
 
@@ -101,6 +104,23 @@ const CategoryLessons = ({ categoryId, categoryName, onBack, onLessonSelect }: C
     }
   };
 
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
   const getLessonProgress = (lessonId: string) => {
     return lessonsProgress.find(p => p.lesson_id === lessonId);
   };
@@ -119,18 +139,50 @@ const CategoryLessons = ({ categoryId, categoryName, onBack, onLessonSelect }: C
     return `https://images.unsplash.com/${images[lesson.order_index % images.length]}?w=300&h=200&fit=crop`;
   };
 
+  // Check if all lessons are completed
+  const isCoursesCompleted = () => {
+    if (lessons.length === 0) return false;
+    const completedLessons = lessons.filter(lesson => {
+      const progress = getLessonProgress(lesson.id);
+      return progress?.status === 'completed';
+    });
+    return completedLessons.length === lessons.length;
+  };
+
+  // Get course skills based on category
+  const getCourseSkills = () => {
+    const skillsMap: { [key: string]: string[] } = {
+      'IA Generativa': ['Prompt Engineering', 'ChatGPT', 'Geração de Conteúdo', 'IA Conversacional'],
+      'Machine Learning': ['Algoritmos ML', 'Análise de Dados', 'Python', 'Estatística'],
+      'Deep Learning': ['Redes Neurais', 'TensorFlow', 'PyTorch', 'Visão Computacional'],
+      'Automação': ['RPA', 'Fluxos de Trabalho', 'Integração de Sistemas', 'Otimização de Processos']
+    };
+    return skillsMap[categoryName] || ['Inteligência Artificial', 'Tecnologia', 'Inovação'];
+  };
+
   if (loading) {
     return <div className="text-center">Carregando aulas...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar
-        </Button>
-        <h1 className="text-3xl font-bold">{categoryName}</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={onBack}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </Button>
+          <h1 className="text-3xl font-bold">{categoryName}</h1>
+        </div>
+        
+        {isCoursesCompleted() && user && userProfile && (
+          <BadgeGenerator
+            courseName={categoryName}
+            completionDate={new Date().toLocaleDateString('pt-BR')}
+            userName={userProfile.display_name || user.email?.split('@')[0] || 'Usuário'}
+            skills={getCourseSkills()}
+          />
+        )}
       </div>
 
       {lessons.length === 0 ? (
