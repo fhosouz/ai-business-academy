@@ -8,6 +8,7 @@ import ChatSupport from "@/components/ChatSupport";
 import CategoryGrid from "@/components/CategoryGrid";
 import CategoryLessons from "@/components/CategoryLessons";
 import LessonPlayer from "@/components/LessonPlayer";
+import CoursesByCategory from "@/components/courses/CoursesByCategory";
 import ContinueLearning from "@/components/ContinueLearning";
 import BadgesDisplay from "@/components/BadgesDisplay";
 import UserProfile from "@/components/UserProfile";
@@ -99,12 +100,9 @@ const Index = () => {
             {coursesView === 'categories' && (
               <>
                 <div className="flex justify-between items-center">
-                  <h1 className="text-3xl font-bold">Categorias de Cursos</h1>
+                  <h1 className="text-3xl font-bold">Cursos Disponíveis</h1>
                 </div>
-                <CategoryGrid 
-                  categories={categories} 
-                  onCategorySelect={handleCategorySelect} 
-                />
+                <CoursesByCategory onCourseSelect={handleCourseSelect} />
               </>
             )}
 

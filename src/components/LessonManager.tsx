@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
 import LessonForm from "./lesson/LessonForm";
 import LessonList from "./lesson/LessonList";
-import { Lesson, Category } from "./lesson/types";
+import { Lesson } from "./lesson/types";
 
 interface LessonManagerProps {
   courseId: number;
@@ -15,7 +15,7 @@ interface LessonManagerProps {
 
 const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [courses, setCourses] = useState<{id: number; title: string; category_id: number}[]>([]);
   const [isAddingLesson, setIsAddingLesson] = useState(false);
   const [editingLesson, setEditingLesson] = useState<any>(null);
   const { toast } = useToast();
@@ -23,7 +23,7 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
 
   useEffect(() => {
     fetchLessons();
-    fetchCategories();
+    fetchCourses();
   }, [courseId]);
 
   const fetchLessons = async () => {
@@ -46,20 +46,21 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
     }
   };
 
-  const fetchCategories = async () => {
+  const fetchCourses = async () => {
     try {
       const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
+        .from('courses')
+        .select('id, title, category_id')
+        .eq('status', 'published')
+        .order('title');
 
       if (error) throw error;
-      setCategories(data || []);
+      setCourses(data || []);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error('Error fetching courses:', error);
       toast({
         title: "Erro", 
-        description: "Erro ao carregar categorias.",
+        description: "Erro ao carregar cursos.",
         variant: "destructive",
       });
     }
@@ -113,7 +114,7 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
 
       <LessonForm
         courseId={courseId}
-        categories={categories}
+        courses={courses}
         onLessonCreated={handleLessonCreated}
         lessonsCount={lessons.length}
         editingLesson={editingLesson}

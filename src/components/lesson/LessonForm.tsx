@@ -10,28 +10,39 @@ import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import VideoUpload from "../VideoUpload";
-import { Category } from "./types";
+interface Course {
+  id: number;
+  title: string;
+  category_id?: number;
+}
 
 interface LessonFormProps {
   courseId: number;
-  categories: Category[];
+  courses: Course[];
   onLessonCreated: () => void;
   lessonsCount: number;
   editingLesson?: any;
   onEditComplete?: () => void;
 }
 
-const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editingLesson, onEditComplete }: LessonFormProps) => {
+const LessonForm = ({ courseId, courses, onLessonCreated, lessonsCount, editingLesson, onEditComplete }: LessonFormProps) => {
   const [isOpen, setIsOpen] = useState(!!editingLesson);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [newLesson, setNewLesson] = useState({
     title: editingLesson?.title || "",
     description: editingLesson?.description || "",
     video_url: editingLesson?.video_url || "",
     is_free: editingLesson?.is_free || false,
-    category_id: editingLesson?.category_id || 1,
+    course_id: editingLesson?.course_id || courseId,
     order_index: editingLesson?.order_index ?? lessonsCount,
   });
   const { toast } = useToast();
+
+  // Buscar detalhes do curso quando courseId ou courses mudam
+  useEffect(() => {
+    const course = courses.find(c => c.id === courseId);
+    setSelectedCourse(course || null);
+  }, [courseId, courses]);
 
   // Sync form state when editingLesson changes
   useEffect(() => {
@@ -44,7 +55,7 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editi
         description: editingLesson.description || "",
         video_url: editingLesson.video_url || "",
         is_free: editingLesson.is_free || false,
-        category_id: editingLesson.category_id || 1,
+        course_id: editingLesson.course_id || courseId,
         order_index: editingLesson.order_index ?? lessonsCount,
       });
     } else {
@@ -70,6 +81,33 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editi
       return;
     }
 
+    // Buscar category_id do curso selecionado
+    const selectedCourseData = courses.find(c => c.id === newLesson.course_id);
+    if (!selectedCourseData) {
+      toast({
+        title: "Erro",
+        description: "Curso selecionado não encontrado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Buscar category_id do curso
+    const { data: courseData, error: courseError } = await supabase
+      .from('courses')
+      .select('category_id')
+      .eq('id', newLesson.course_id)
+      .single();
+
+    if (courseError || !courseData) {
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar dados do curso.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       if (editingLesson) {
         // Update existing lesson
@@ -80,7 +118,8 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editi
             description: newLesson.description,
             video_url: newLesson.video_url,
             is_free: newLesson.is_free,
-            category_id: newLesson.category_id,
+            course_id: newLesson.course_id,
+            category_id: courseData.category_id,
             order_index: newLesson.order_index,
           })
           .eq('id', editingLesson.id);
@@ -100,12 +139,12 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editi
         const { error } = await supabase
           .from('lessons')
           .insert({
-            course_id: courseId,
+            course_id: newLesson.course_id,
             title: newLesson.title,
             description: newLesson.description,
             video_url: newLesson.video_url,
             is_free: newLesson.is_free,
-            category_id: newLesson.category_id,
+            category_id: courseData.category_id,
             order_index: newLesson.order_index,
           });
 
@@ -122,7 +161,7 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editi
         description: "",
         video_url: "",
         is_free: false,
-        category_id: 1,
+        course_id: courseId,
         order_index: lessonsCount,
       });
       setIsOpen(false);
@@ -187,19 +226,19 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editi
             </div>
 
             <div>
-              <Label htmlFor="lesson-category">Categoria</Label>
+              <Label htmlFor="lesson-course">Curso</Label>
               <Select 
-                name="category"
-                value={newLesson.category_id.toString()} 
-                onValueChange={(value) => setNewLesson(prev => ({ ...prev, category_id: parseInt(value) }))}
+                name="course"
+                value={newLesson.course_id.toString()} 
+                onValueChange={(value) => setNewLesson(prev => ({ ...prev, course_id: parseInt(value) }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria" />
+                  <SelectValue placeholder="Selecione um curso" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.name}
+                  {courses.map((course) => (
+                    <SelectItem key={course.id} value={course.id.toString()}>
+                      {course.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
