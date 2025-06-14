@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Users, Calendar, Clock, Home, Search, User, MessageSquare, Check, Settings, Shield } from "lucide-react";
+import { BookOpen, Users, Calendar, Clock, Home, Search, User, MessageSquare, Check, Settings, Shield, Trophy, Award } from "lucide-react";
 import Header from "@/components/Header";
 import CourseCard from "@/components/CourseCard";
 import ProgressStats from "@/components/ProgressStats";
@@ -16,11 +16,14 @@ import AdminManager from "@/components/AdminManager";
 import CategoryGrid from "@/components/CategoryGrid";
 import CategoryLessons from "@/components/CategoryLessons";
 import LessonPlayer from "@/components/LessonPlayer";
+import ContinueLearning from "@/components/ContinueLearning";
+import BadgesDisplay from "@/components/BadgesDisplay";
 import { Lesson } from "@/components/lesson/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserProgress } from "@/hooks/useUserProgress";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -32,6 +35,7 @@ const Index = () => {
   const { toast } = useToast();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const { user } = useAuth();
+  const { userProgress, loading: progressLoading } = useUserProgress();
 
   useEffect(() => {
     fetchCategories();
@@ -59,6 +63,11 @@ const Index = () => {
   const handleCategorySelect = (categoryId: number, categoryName: string) => {
     setSelectedCategory({ id: categoryId, name: categoryName });
     setCoursesView('lessons');
+  };
+
+  const handleContinueLearningSelect = (categoryId: number, categoryName: string) => {
+    setActiveTab('courses');
+    handleCategorySelect(categoryId, categoryName);
   };
 
   const handleLessonSelect = (lesson: Lesson) => {
@@ -111,14 +120,6 @@ const Index = () => {
     return displayName.substring(0, 2).toUpperCase();
   };
 
-  const userProgress = {
-    totalCourses: 12,
-    completedCourses: 4,
-    inProgress: 3,
-    totalXP: 2450,
-    level: 8,
-    badges: 12
-  };
 
   const featuredCourses = [
     {
@@ -172,7 +173,7 @@ const Index = () => {
             setSelectedLesson(null);
           }
         }} className="w-full">
-          <TabsList className={`grid w-full mb-8 ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'}`}>
+          <TabsList className={`grid w-full mb-8 ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'}`}>
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <Home className="w-4 h-4" />
               Dashboard
@@ -191,6 +192,10 @@ const Index = () => {
                 Admin
               </TabsTrigger>
             )}
+            <TabsTrigger value="badges" className="flex items-center gap-2">
+              <Trophy className="w-4 h-4" />
+              Badges
+            </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="w-4 h-4" />
               Perfil
@@ -224,11 +229,7 @@ const Index = () => {
                 <BookOpen className="w-6 h-6 text-blue-600" />
                 Continue Aprendendo
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {featuredCourses.map((course) => (
-                  <CourseCard key={course.id} course={course} />
-                ))}
-              </div>
+              <ContinueLearning onLessonSelect={handleContinueLearningSelect} />
             </div>
 
             {/* Categories Grid */}
@@ -365,6 +366,10 @@ const Index = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="badges">
+            <BadgesDisplay />
           </TabsContent>
 
           <TabsContent value="support">

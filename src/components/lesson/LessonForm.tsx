@@ -29,6 +29,7 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editi
     video_url: editingLesson?.video_url || "",
     is_free: editingLesson?.is_free || false,
     category_id: editingLesson?.category_id || 1,
+    order_index: editingLesson?.order_index ?? lessonsCount,
   });
   const { toast } = useToast();
 
@@ -61,6 +62,7 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editi
             video_url: newLesson.video_url,
             is_free: newLesson.is_free,
             category_id: newLesson.category_id,
+            order_index: newLesson.order_index,
           })
           .eq('id', editingLesson.id);
 
@@ -85,7 +87,7 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editi
             video_url: newLesson.video_url,
             is_free: newLesson.is_free,
             category_id: newLesson.category_id,
-            order_index: lessonsCount,
+            order_index: newLesson.order_index,
           });
 
         if (error) throw error;
@@ -102,6 +104,7 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editi
         video_url: "",
         is_free: false,
         category_id: 1,
+        order_index: lessonsCount,
       });
       setIsOpen(false);
       onLessonCreated();
@@ -182,6 +185,18 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editi
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="lesson-order">Ordem da Aula</Label>
+              <Input
+                id="lesson-order"
+                type="number"
+                value={newLesson.order_index}
+                onChange={(e) => setNewLesson(prev => ({ ...prev, order_index: parseInt(e.target.value) || 0 }))}
+                placeholder="Ordem da aula (0, 1, 2...)"
+                min="0"
+              />
             </div>
 
             <div className="flex items-center space-x-2">

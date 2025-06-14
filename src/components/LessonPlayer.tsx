@@ -1,7 +1,11 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Play } from "lucide-react";
+import { ArrowLeft, Play, CheckCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Lesson {
   id: string;
@@ -19,12 +23,107 @@ interface LessonPlayerProps {
 }
 
 const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
+  const [progress, setProgress] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
   console.log('🎬 LessonPlayer recebeu lesson:', {
     id: lesson.id,
     title: lesson.title,
     video_url: lesson.video_url,
     hasVideo: !!lesson.video_url
   });
+
+  useEffect(() => {
+    if (user) {
+      fetchProgress();
+    }
+  }, [lesson.id, user]);
+
+  const fetchProgress = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_lesson_progress')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('lesson_id', lesson.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setProgress(data);
+    } catch (error) {
+      console.error('Error fetching progress:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markAsInProgress = async () => {
+    if (!user || progress?.status === 'in_progress' || progress?.status === 'completed') return;
+
+    try {
+      const { error } = await supabase
+        .from('user_lesson_progress')
+        .upsert({
+          user_id: user.id,
+          lesson_id: lesson.id,
+          status: 'in_progress',
+          started_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+      await fetchProgress();
+    } catch (error) {
+      console.error('Error marking as in progress:', error);
+    }
+  };
+
+  const markAsCompleted = async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_lesson_progress')
+        .upsert({
+          user_id: user.id,
+          lesson_id: lesson.id,
+          status: 'completed',
+          started_at: progress?.started_at || new Date().toISOString(),
+          completed_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+      
+      toast({
+        title: "Parabéns!",
+        description: "Aula concluída com sucesso.",
+      });
+      
+      await fetchProgress();
+    } catch (error) {
+      console.error('Error marking as completed:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao marcar aula como concluída.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleVideoPlay = () => {
+    markAsInProgress();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -40,6 +139,8 @@ const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
           <div className="flex items-center gap-2 mb-2">
             <Badge variant="outline">Aula {lesson.order_index + 1}</Badge>
             {lesson.is_free && <Badge variant="secondary">Gratuita</Badge>}
+            {progress?.status === 'completed' && <Badge className="bg-green-600">Concluída</Badge>}
+            {progress?.status === 'in_progress' && <Badge variant="secondary">Em Progresso</Badge>}
           </div>
           <CardTitle className="text-2xl">{lesson.title}</CardTitle>
         </CardHeader>
@@ -53,6 +154,7 @@ const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
                 src={lesson.video_url}
                 crossOrigin="anonymous"
                 preload="metadata"
+                onPlay={handleVideoPlay}
               >
                 <source src={lesson.video_url} type="video/mp4" />
                 <source src={lesson.video_url} type="video/webm" />
@@ -75,6 +177,15 @@ const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
               <p className="text-muted-foreground leading-relaxed">
                 {lesson.description}
               </p>
+            </div>
+          )}
+
+          {progress?.status !== 'completed' && (
+            <div className="flex justify-end">
+              <Button onClick={markAsCompleted} className="bg-green-600 hover:bg-green-700">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Marcar como Concluída
+              </Button>
             </div>
           )}
         </CardContent>
