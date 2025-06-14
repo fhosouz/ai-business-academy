@@ -65,12 +65,9 @@ const Index = () => {
   ];
 
   const categories = [
-    { name: "IA Generativa", count: 15, color: "bg-gradient-to-r from-purple-500 to-pink-500" },
-    { name: "Prompt Engineering", count: 8, color: "bg-gradient-to-r from-blue-500 to-cyan-500" },
-    { name: "Automação", count: 12, color: "bg-gradient-to-r from-green-500 to-emerald-500" },
-    { name: "IA para Negócios", count: 20, color: "bg-gradient-to-r from-orange-500 to-red-500" },
-    { name: "Machine Learning", count: 10, color: "bg-gradient-to-r from-indigo-500 to-purple-500" },
-    { name: "Ética em IA", count: 6, color: "bg-gradient-to-r from-teal-500 to-blue-500" }
+    { name: "Introdução a IA Generativa", count: 8, color: "bg-gradient-to-r from-purple-500 to-pink-500" },
+    { name: "Prompt Engineering", count: 12, color: "bg-gradient-to-r from-blue-500 to-cyan-500" },
+    { name: "Agentes de AI", count: 6, color: "bg-gradient-to-r from-green-500 to-emerald-500" }
   ];
 
   return (
@@ -139,7 +136,7 @@ const Index = () => {
             {/* Categories Grid */}
             <div>
               <h2 className="text-2xl font-bold mb-6">Explore por Categoria</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {categories.map((category, index) => (
                   <Card key={index} className="hover:scale-105 transition-transform cursor-pointer">
                     <CardContent className="p-4">

@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string
@@ -32,6 +56,7 @@ export type Database = {
       }
       lessons: {
         Row: {
+          category_id: number
           course_id: number
           created_at: string
           description: string | null
@@ -44,6 +69,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          category_id: number
           course_id: number
           created_at?: string
           description?: string | null
@@ -56,6 +82,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          category_id?: number
           course_id?: number
           created_at?: string
           description?: string | null
@@ -67,7 +94,15 @@ export type Database = {
           video_duration?: number | null
           video_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "lessons_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen, Plus, Video, Edit, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +21,17 @@ interface Lesson {
   order_index: number;
   is_free: boolean;
   course_id: number;
+  category_id: number;
+  categories?: {
+    id: number;
+    name: string;
+  };
+}
+
+interface Category {
+  id: number;
+  name: string;
+  description: string;
 }
 
 interface LessonManagerProps {
@@ -29,24 +41,27 @@ interface LessonManagerProps {
 
 const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isAddingLesson, setIsAddingLesson] = useState(false);
   const [newLesson, setNewLesson] = useState({
     title: "",
     description: "",
     video_url: "",
     is_free: false,
+    category_id: 1,
   });
   const { toast } = useToast();
 
   useEffect(() => {
     fetchLessons();
+    fetchCategories();
   }, [courseId]);
 
   const fetchLessons = async () => {
     try {
       const { data, error } = await supabase
         .from('lessons')
-        .select('*')
+        .select('*, categories(id, name)')
         .eq('course_id', courseId)
         .order('order_index');
 
@@ -57,6 +72,25 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
       toast({
         title: "Erro",
         description: "Erro ao carregar aulas.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      toast({
+        title: "Erro", 
+        description: "Erro ao carregar categorias.",
         variant: "destructive",
       });
     }
@@ -89,6 +123,7 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
           description: newLesson.description,
           video_url: newLesson.video_url,
           is_free: newLesson.is_free,
+          category_id: newLesson.category_id,
           order_index: lessons.length,
         });
 
@@ -99,6 +134,7 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
         description: "",
         video_url: "",
         is_free: false,
+        category_id: 1,
       });
       setIsAddingLesson(false);
       fetchLessons();
@@ -194,6 +230,25 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
               />
             </div>
 
+            <div>
+              <Label htmlFor="lesson-category">Categoria</Label>
+              <Select 
+                value={newLesson.category_id.toString()} 
+                onValueChange={(value) => setNewLesson(prev => ({ ...prev, category_id: parseInt(value) }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex items-center space-x-2">
               <Switch
                 id="is-free"
@@ -229,6 +284,7 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
                   <div className="flex items-center gap-2 mb-2">
                     <Badge variant="outline">Aula {index + 1}</Badge>
                     {lesson.is_free && <Badge>Gratuita</Badge>}
+                    {lesson.categories && <Badge variant="secondary">{lesson.categories.name}</Badge>}
                     {lesson.video_url && <Video className="w-4 h-4 text-green-600" />}
                   </div>
                   <h4 className="font-semibold">{lesson.title}</h4>
