@@ -18,6 +18,7 @@ import CategoryLessons from "@/components/CategoryLessons";
 import LessonPlayer from "@/components/LessonPlayer";
 import ContinueLearning from "@/components/ContinueLearning";
 import BadgesDisplay from "@/components/BadgesDisplay";
+import UserProfile from "@/components/UserProfile";
 import { Lesson } from "@/components/lesson/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -160,9 +161,24 @@ const Index = () => {
     }
   ];
 
+  const handleSearchResult = (result: any) => {
+    if (result.type === 'category') {
+      setActiveTab('courses');
+      handleCategorySelect(result.category_id, result.title);
+    } else if (result.type === 'lesson') {
+      setActiveTab('courses');
+      handleCategorySelect(result.category_id, result.category_name);
+      // Find and select the lesson
+      setTimeout(() => {
+        // This would require additional logic to automatically select the lesson
+        console.log('Navigate to lesson:', result);
+      }, 100);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <Header />
+      <Header onSearchResult={handleSearchResult} />
       
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={(value) => {
@@ -335,37 +351,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="profile">
-            <div className="max-w-2xl mx-auto">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Meu Perfil</CardTitle>
-                  <CardDescription>Gerencie suas informações e preferências</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center gap-4">
-                     <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                       {getUserInitials()}
-                     </div>
-                     <div>
-                       <h3 className="text-xl font-semibold">{getUserDisplayName()}</h3>
-                       <p className="text-gray-600">{user?.email || "usuario@email.com"}</p>
-                       <Badge className="mt-2">Plano Premium</Badge>
-                     </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{userProgress.completedCourses}</div>
-                      <div className="text-sm text-gray-600">Cursos Concluídos</div>
-                    </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">{userProgress.badges}</div>
-                      <div className="text-sm text-gray-600">Badges Conquistadas</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <UserProfile />
           </TabsContent>
 
           <TabsContent value="badges">

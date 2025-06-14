@@ -150,7 +150,7 @@ const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
             <div className="w-full aspect-video bg-muted rounded-lg overflow-hidden">
               <video 
                 controls 
-                className="w-full h-full object-cover"
+                className="w-full h-full"
                 src={lesson.video_url}
                 crossOrigin="anonymous"
                 preload="metadata"

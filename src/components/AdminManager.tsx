@@ -22,8 +22,6 @@ interface AdminUser {
 const AdminManager = () => {
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [newAdminEmail, setNewAdminEmail] = useState("");
-  const [newAdminPassword, setNewAdminPassword] = useState("");
-  const [newAdminName, setNewAdminName] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchingUsers, setFetchingUsers] = useState(true);
   const { toast } = useToast();
@@ -86,11 +84,11 @@ const AdminManager = () => {
     }
   };
 
-  const createAdmin = async () => {
-    if (!newAdminEmail || !newAdminPassword || !newAdminName) {
+  const addExistingAdmin = async () => {
+    if (!newAdminEmail) {
       toast({
         title: "Erro",
-        description: "Todos os campos são obrigatórios.",
+        description: "Email é obrigatório.",
         variant: "destructive",
       });
       return;
@@ -98,52 +96,61 @@ const AdminManager = () => {
 
     setLoading(true);
     try {
-      // Create user with admin role
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newAdminEmail,
-        password: newAdminPassword,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            display_name: newAdminName
-          }
-        }
-      });
-
-      if (authError) throw authError;
-
-      if (authData.user) {
-        // Update user role to admin
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .update({ role: 'admin' })
-          .eq('user_id', authData.user.id);
-
-        if (roleError) throw roleError;
-
-        // Update profile with display name
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ display_name: newAdminName })
-          .eq('user_id', authData.user.id);
-
-        if (profileError) throw profileError;
+      // First, get user by email from auth.users
+      const { data: users, error: fetchError } = await supabase.auth.admin.listUsers();
+      
+      if (fetchError) throw fetchError;
+      
+      const targetUser = users.users.find(user => user.email === newAdminEmail);
+      
+      if (!targetUser) {
+        toast({
+          title: "Erro",
+          description: "Usuário com este email não encontrado. O usuário deve estar registrado primeiro.",
+          variant: "destructive",
+        });
+        return;
       }
 
+      // Check if user already has admin role
+      const { data: existingRole } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', targetUser.id)
+        .eq('role', 'admin')
+        .single();
+
+      if (existingRole) {
+        toast({
+          title: "Aviso",
+          description: "Este usuário já é um administrador.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Add admin role
+      const { error: insertError } = await supabase
+        .from('user_roles')
+        .upsert({
+          user_id: targetUser.id,
+          role: 'admin'
+        });
+
+      if (insertError) throw insertError;
+
       setNewAdminEmail("");
-      setNewAdminPassword("");
-      setNewAdminName("");
       fetchAdminUsers();
 
       toast({
         title: "Sucesso!",
-        description: "Administrador criado com sucesso.",
+        description: "Usuário promovido a administrador com sucesso.",
       });
     } catch (error: any) {
-      console.error('Error creating admin:', error);
+      console.error('Error adding admin:', error);
       toast({
         title: "Erro",
-        description: error.message || "Erro ao criar administrador.",
+        description: error.message || "Erro ao adicionar administrador.",
         variant: "destructive",
       });
     } finally {
@@ -195,46 +202,28 @@ const AdminManager = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5" />
-            Cadastrar Novo Administrador
+            Adicionar Administrador
           </CardTitle>
           <CardDescription>
-            Crie uma nova conta de administrador com acesso total ao sistema
+            Promova um usuário existente a administrador informando seu email
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="admin-name">Nome Completo</Label>
-              <Input
-                id="admin-name"
-                value={newAdminName}
-                onChange={(e) => setNewAdminName(e.target.value)}
-                placeholder="Ex: João Silva"
-              />
-            </div>
-            <div>
-              <Label htmlFor="admin-email">Email</Label>
-              <Input
-                id="admin-email"
-                type="email"
-                value={newAdminEmail}
-                onChange={(e) => setNewAdminEmail(e.target.value)}
-                placeholder="admin@exemplo.com"
-              />
-            </div>
-            <div>
-              <Label htmlFor="admin-password">Senha</Label>
-              <Input
-                id="admin-password"
-                type="password"
-                value={newAdminPassword}
-                onChange={(e) => setNewAdminPassword(e.target.value)}
-                placeholder="Senha segura"
-              />
-            </div>
+          <div>
+            <Label htmlFor="admin-email">Email do Usuário</Label>
+            <Input
+              id="admin-email"
+              type="email"
+              value={newAdminEmail}
+              onChange={(e) => setNewAdminEmail(e.target.value)}
+              placeholder="email@exemplo.com"
+            />
+            <p className="text-sm text-muted-foreground mt-1">
+              O usuário deve estar registrado no sistema
+            </p>
           </div>
-          <Button onClick={createAdmin} disabled={loading} className="w-full">
-            {loading ? "Criando..." : "Criar Administrador"}
+          <Button onClick={addExistingAdmin} disabled={loading} className="w-full">
+            {loading ? "Adicionando..." : "Promover a Administrador"}
           </Button>
         </CardContent>
       </Card>
