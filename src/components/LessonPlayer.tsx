@@ -39,20 +39,21 @@ const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
         
         <CardContent className="space-y-6">
           {lesson.video_url ? (
-            <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
+            <div className="aspect-video bg-muted rounded-lg overflow-hidden">
               <video 
                 controls 
-                className="w-full h-full rounded-lg"
+                className="w-full h-full object-cover"
                 src={lesson.video_url}
+                poster="/placeholder.svg"
               >
                 Seu navegador não suporta vídeos HTML5.
               </video>
             </div>
           ) : (
-            <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
+            <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
               <div className="text-center">
-                <Play className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-500">Vídeo não disponível</p>
+                <Play className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">Vídeo não disponível</p>
               </div>
             </div>
           )}
