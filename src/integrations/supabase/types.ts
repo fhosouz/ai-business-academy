@@ -169,7 +169,12 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           display_name: string | null
+          family_name: string | null
+          given_name: string | null
+          google_id: string | null
           id: string
+          locale: string | null
+          picture_url: string | null
           updated_at: string
           user_id: string
         }
@@ -177,7 +182,12 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          family_name?: string | null
+          given_name?: string | null
+          google_id?: string | null
           id?: string
+          locale?: string | null
+          picture_url?: string | null
           updated_at?: string
           user_id: string
         }
@@ -185,7 +195,12 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          family_name?: string | null
+          given_name?: string | null
+          google_id?: string | null
           id?: string
+          locale?: string | null
+          picture_url?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -306,6 +321,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          plan_type: Database["public"]["Enums"]["plan_type"] | null
           role: Database["public"]["Enums"]["app_role"]
           updated_at: string
           user_id: string
@@ -313,6 +329,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          plan_type?: Database["public"]["Enums"]["plan_type"] | null
           role: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           user_id: string
@@ -320,6 +337,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          plan_type?: Database["public"]["Enums"]["plan_type"] | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           user_id?: string
@@ -353,6 +371,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      plan_type: "free" | "premium" | "enterprise"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -469,6 +488,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      plan_type: ["free", "premium", "enterprise"],
     },
   },
 } as const
