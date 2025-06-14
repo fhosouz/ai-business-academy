@@ -54,15 +54,21 @@ const VideoUpload = ({ onVideoUploaded, courseId }: VideoUploadProps) => {
     console.log('🔄 Starting video upload...', {
       fileName: selectedFile.name,
       fileSize: selectedFile.size,
-      fileType: selectedFile.type
+      fileType: selectedFile.type,
+      courseId: courseId
     });
 
     try {
       // Check if user is authenticated
       const { data: { user }, error: authError } = await supabase.auth.getUser();
-      console.log('🔐 Auth check:', { user: user?.id, authError });
+      console.log('🔐 Auth check:', { 
+        user: user?.id, 
+        authError,
+        isAuthenticated: !!user 
+      });
       
       if (authError || !user) {
+        console.error('❌ Authentication failed:', authError);
         throw new Error('Usuário não autenticado');
       }
 
@@ -75,21 +81,41 @@ const VideoUpload = ({ onVideoUploaded, courseId }: VideoUploadProps) => {
       const fileName = `${Date.now()}-${cleanFileName}.${fileExtension}`;
       const filePath = `${courseId}/${fileName}`;
 
-      console.log('📁 Upload path:', filePath);
-      console.log('📊 File details:', {
+      console.log('📁 Upload details:', {
         originalName: selectedFile.name,
         cleanName: fileName,
+        filePath: filePath,
         size: `${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB`,
-        type: selectedFile.type
+        type: selectedFile.type,
+        courseId: courseId
       });
 
-      // Check if bucket exists
+      // Check if bucket exists and list buckets
       console.log('🪣 Checking bucket access...');
       const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-      console.log('🪣 Available buckets:', buckets?.map(b => b.name), bucketError);
+      console.log('🪣 Available buckets:', {
+        buckets: buckets?.map(b => ({ name: b.name, public: b.public })), 
+        bucketError
+      });
 
-      // Attempt upload
-      console.log('⬆️ Starting upload to bucket...');
+      // Check if the specific bucket exists
+      const lessonsContentBucket = buckets?.find(b => b.name === 'Lessons-content');
+      console.log('🎯 Target bucket found:', lessonsContentBucket);
+
+      if (!lessonsContentBucket) {
+        console.error('❌ Bucket "Lessons-content" not found!');
+        throw new Error('Bucket de armazenamento não encontrado');
+      }
+
+      // Attempt upload with detailed logging
+      console.log('⬆️ Starting upload to bucket "Lessons-content"...');
+      console.log('📋 Upload parameters:', {
+        bucket: 'Lessons-content',
+        path: filePath,
+        fileSize: selectedFile.size,
+        fileType: selectedFile.type
+      });
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('Lessons-content')
         .upload(filePath, selectedFile, {
@@ -97,7 +123,16 @@ const VideoUpload = ({ onVideoUploaded, courseId }: VideoUploadProps) => {
           upsert: false
         });
 
-      console.log('✅ Upload result:', { uploadData, uploadError });
+      console.log('✅ Upload result:', { 
+        uploadData: uploadData ? {
+          id: uploadData.id,
+          path: uploadData.path,
+          fullPath: uploadData.fullPath
+        } : null, 
+        uploadError: uploadError ? {
+          message: uploadError.message
+        } : null
+      });
 
       if (uploadError) {
         console.error('❌ Upload error details:', {
@@ -108,24 +143,40 @@ const VideoUpload = ({ onVideoUploaded, courseId }: VideoUploadProps) => {
         throw uploadError;
       }
 
+      if (!uploadData) {
+        console.error('❌ No upload data returned');
+        throw new Error('Falha no upload - nenhum dado retornado');
+      }
+
       // Generate public URL
       console.log('🔗 Generating public URL...');
       const { data: { publicUrl } } = supabase.storage
         .from('Lessons-content')
         .getPublicUrl(filePath);
 
-      console.log('🔗 Public URL generated:', publicUrl);
+      console.log('🔗 Public URL generated:', {
+        publicUrl,
+        filePath
+      });
       
       // Verify the file was uploaded by listing it
       console.log('🔍 Verifying upload...');
       const { data: files, error: listError } = await supabase.storage
         .from('Lessons-content')
         .list(`${courseId}/`, {
-          limit: 100,
-          search: cleanFileName
+          limit: 100
         });
       
-      console.log('📋 Files in bucket after upload:', files?.map(f => f.name), listError);
+      console.log('📋 Files in bucket after upload:', {
+        files: files?.map(f => ({ name: f.name, size: f.metadata?.size })), 
+        listError,
+        searchPath: `${courseId}/`
+      });
+
+      console.log('✅ Upload completed successfully!', {
+        publicUrl,
+        fileName: selectedFile.name
+      });
 
       onVideoUploaded(publicUrl, selectedFile.name);
       setSelectedFile(null);
@@ -135,7 +186,11 @@ const VideoUpload = ({ onVideoUploaded, courseId }: VideoUploadProps) => {
         description: "Vídeo enviado com sucesso.",
       });
     } catch (error) {
-      console.error('Error uploading video:', error);
+      console.error('💥 Error uploading video:', {
+        error,
+        message: error.message,
+        stack: error.stack
+      });
       toast({
         title: "Erro",
         description: `Erro ao enviar vídeo: ${error.message || 'Tente novamente.'}`,
