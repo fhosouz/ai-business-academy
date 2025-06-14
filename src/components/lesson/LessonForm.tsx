@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +32,23 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editi
     order_index: editingLesson?.order_index ?? lessonsCount,
   });
   const { toast } = useToast();
+
+  // Sync form state when editingLesson changes
+  useEffect(() => {
+    if (editingLesson) {
+      setIsOpen(true);
+      setNewLesson({
+        title: editingLesson.title || "",
+        description: editingLesson.description || "",
+        video_url: editingLesson.video_url || "",
+        is_free: editingLesson.is_free || false,
+        category_id: editingLesson.category_id || 1,
+        order_index: editingLesson.order_index ?? lessonsCount,
+      });
+    } else {
+      setIsOpen(false);
+    }
+  }, [editingLesson, lessonsCount]);
 
   const handleVideoUploaded = (videoUrl: string, fileName: string) => {
     setNewLesson(prev => ({
