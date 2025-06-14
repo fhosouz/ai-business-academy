@@ -11,11 +11,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useUserProgress } from "@/hooks/useUserProgress";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import PlanBadge from "@/components/PlanBadge";
+import PlanUpgrade from "@/components/PlanUpgrade";
 
 const UserProfile = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { userProgress } = useUserProgress();
+  const { plan } = useUserPlan();
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState({
     display_name: "",
@@ -227,7 +231,7 @@ const UserProfile = () => {
               </div>
               
               <div className="flex gap-2">
-                <Badge className="bg-blue-600">Plano Premium</Badge>
+                <PlanBadge plan={plan} />
                 <Badge variant="outline">Nível {userProgress.level}</Badge>
               </div>
             </div>

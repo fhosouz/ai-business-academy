@@ -349,6 +349,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_premium: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       get_category_progress: {
         Args: { p_category_id: number; p_user_id: string }
         Returns: number
@@ -356,6 +360,10 @@ export type Database = {
       get_course_progress: {
         Args: { p_course_id: number; p_user_id: string }
         Returns: number
+      }
+      get_user_plan: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["plan_type"]
       }
       get_user_role: {
         Args: { _user_id: string }
