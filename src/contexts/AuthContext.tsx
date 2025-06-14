@@ -36,17 +36,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Sincronizar dados do Google no login
         if (event === 'SIGNED_IN' && session?.user) {
           const user = session.user;
-          // Verificar se é login com Google e tem metadata
-          if (user.app_metadata?.provider === 'google' && user.user_metadata) {
+          console.log('User metadata:', user.user_metadata);
+          console.log('App metadata:', user.app_metadata);
+          
+          // Sincronizar dados para qualquer login (não apenas Google)
+          if (user.user_metadata && Object.keys(user.user_metadata).length > 0) {
             try {
-              // Chamar função para sincronizar dados do Google
+              // Chamar função para sincronizar dados do usuário
               await supabase.rpc('sync_google_user_data', {
                 _user_id: user.id,
                 _metadata: user.user_metadata
               });
-              console.log('Dados do Google sincronizados com sucesso');
+              console.log('Dados do usuário sincronizados com sucesso');
             } catch (error) {
-              console.error('Erro ao sincronizar dados do Google:', error);
+              console.error('Erro ao sincronizar dados do usuário:', error);
             }
           }
         }
