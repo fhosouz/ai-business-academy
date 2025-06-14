@@ -226,7 +226,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
+          city: string | null
+          country: string | null
           created_at: string
           display_name: string | null
           family_name: string | null
@@ -234,12 +237,18 @@ export type Database = {
           google_id: string | null
           id: string
           locale: string | null
+          phone: string | null
           picture_url: string | null
+          postal_code: string | null
+          state: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           display_name?: string | null
           family_name?: string | null
@@ -247,12 +256,18 @@ export type Database = {
           google_id?: string | null
           id?: string
           locale?: string | null
+          phone?: string | null
           picture_url?: string | null
+          postal_code?: string | null
+          state?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           display_name?: string | null
           family_name?: string | null
@@ -260,7 +275,10 @@ export type Database = {
           google_id?: string | null
           id?: string
           locale?: string | null
+          phone?: string | null
           picture_url?: string | null
+          postal_code?: string | null
+          state?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -435,6 +453,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      sync_google_user_data: {
+        Args: { _user_id: string; _metadata: Json }
+        Returns: undefined
       }
     }
     Enums: {

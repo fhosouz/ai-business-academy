@@ -28,10 +28,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Sincronizar dados do Google no login
+        if (event === 'SIGNED_IN' && session?.user) {
+          const user = session.user;
+          // Verificar se é login com Google e tem metadata
+          if (user.app_metadata?.provider === 'google' && user.user_metadata) {
+            try {
+              // Chamar função para sincronizar dados do Google
+              await supabase.rpc('sync_google_user_data', {
+                _user_id: user.id,
+                _metadata: user.user_metadata
+              });
+              console.log('Dados do Google sincronizados com sucesso');
+            } catch (error) {
+              console.error('Erro ao sincronizar dados do Google:', error);
+            }
+          }
+        }
       }
     );
 
