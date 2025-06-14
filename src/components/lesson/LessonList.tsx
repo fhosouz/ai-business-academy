@@ -38,13 +38,13 @@ const LessonList = ({ lessons, onLessonDeleted, onLessonEdit, isAddingLesson }: 
           // Extract file path from URL
           const url = new URL(lesson.video_url);
           const pathSegments = url.pathname.split('/');
-          const bucketIndex = pathSegments.findIndex(segment => segment === 'course-videos');
+          const bucketIndex = pathSegments.findIndex(segment => segment === 'Lessons-content');
           
           if (bucketIndex !== -1 && bucketIndex < pathSegments.length - 1) {
             const filePath = pathSegments.slice(bucketIndex + 1).join('/');
             
             await supabase.storage
-              .from('course-videos')
+              .from('Lessons-content')
               .remove([filePath]);
           }
         } catch (storageError) {
