@@ -39,9 +39,12 @@ const Header = () => {
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
+                id="search-courses"
+                name="search"
                 type="text"
                 placeholder="Buscar cursos, tópicos..."
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                aria-label="Buscar cursos e tópicos"
               />
             </div>
           </div>

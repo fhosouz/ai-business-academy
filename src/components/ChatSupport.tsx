@@ -145,11 +145,14 @@ const ChatSupport = () => {
               {/* Input */}
               <div className="flex gap-2">
                 <Input
+                  id="chat-message-input"
+                  name="message"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Digite sua mensagem..."
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   className="flex-1"
+                  aria-label="Digite sua mensagem"
                 />
                 <Button onClick={handleSendMessage} className="bg-blue-600 hover:bg-blue-700">
                   Enviar

@@ -167,6 +167,7 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editi
             <div>
               <Label htmlFor="lesson-category">Categoria</Label>
               <Select 
+                name="category"
                 value={newLesson.category_id.toString()} 
                 onValueChange={(value) => setNewLesson(prev => ({ ...prev, category_id: parseInt(value) }))}
               >
