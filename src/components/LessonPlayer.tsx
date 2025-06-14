@@ -103,6 +103,9 @@ const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
       });
       
       await fetchProgress();
+      
+      // Forçar atualização da página de categorias se disponível
+      window.dispatchEvent(new CustomEvent('lesson-progress-updated'));
     } catch (error) {
       console.error('Error marking as completed:', error);
       toast({

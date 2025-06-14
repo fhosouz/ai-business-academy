@@ -38,6 +38,29 @@ const CategoryLessons = ({ categoryId, categoryName, onBack, onLessonSelect }: C
     }
   }, [categoryId, user]);
 
+  // Buscar progresso sempre que voltar para a página
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        fetchLessonsProgress();
+      }
+    };
+
+    const handleLessonProgressUpdate = () => {
+      if (user) {
+        fetchLessonsProgress();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('lesson-progress-updated', handleLessonProgressUpdate);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('lesson-progress-updated', handleLessonProgressUpdate);
+    };
+  }, [user]);
+
   const fetchLessons = async () => {
     try {
       const { data, error } = await supabase
