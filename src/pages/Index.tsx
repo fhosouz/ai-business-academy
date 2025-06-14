@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,9 +12,62 @@ import ProgressStats from "@/components/ProgressStats";
 import TrendsSection from "@/components/TrendsSection";
 import ChatSupport from "@/components/ChatSupport";
 import LessonManager from "@/components/LessonManager";
+import CategoryGrid from "@/components/CategoryGrid";
+import CategoryLessons from "@/components/CategoryLessons";
+import LessonPlayer from "@/components/LessonPlayer";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [coursesView, setCoursesView] = useState<'categories' | 'lessons' | 'player'>('categories');
+  const [selectedCategory, setSelectedCategory] = useState<{ id: number; name: string } | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<any>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar categorias.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCategorySelect = (categoryId: number, categoryName: string) => {
+    setSelectedCategory({ id: categoryId, name: categoryName });
+    setCoursesView('lessons');
+  };
+
+  const handleLessonSelect = (lesson: any) => {
+    setSelectedLesson(lesson);
+    setCoursesView('player');
+  };
+
+  const handleBackToCategories = () => {
+    setCoursesView('categories');
+    setSelectedCategory(null);
+  };
+
+  const handleBackToLessons = () => {
+    setCoursesView('lessons');
+    setSelectedLesson(null);
+  };
 
   const userProgress = {
     totalCourses: 12,
@@ -64,18 +117,19 @@ const Index = () => {
     }
   ];
 
-  const categories = [
-    { name: "Introdução a IA Generativa", count: 8, color: "bg-gradient-to-r from-purple-500 to-pink-500" },
-    { name: "Prompt Engineering", count: 12, color: "bg-gradient-to-r from-blue-500 to-cyan-500" },
-    { name: "Agentes de AI", count: 6, color: "bg-gradient-to-r from-green-500 to-emerald-500" }
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <Header />
       
       <div className="container mx-auto px-4 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => {
+          setActiveTab(value);
+          if (value === 'courses') {
+            setCoursesView('categories');
+            setSelectedCategory(null);
+            setSelectedLesson(null);
+          }
+        }} className="w-full">
           <TabsList className="grid w-full grid-cols-6 mb-8">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <Home className="w-4 h-4" />
@@ -153,21 +207,33 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="courses" className="space-y-8">
-            <div className="flex justify-between items-center">
-              <h1 className="text-3xl font-bold">Catálogo de Cursos</h1>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Search className="w-4 h-4 mr-2" />
-                  Buscar
-                </Button>
-              </div>
-            </div>
+            {coursesView === 'categories' && (
+              <>
+                <div className="flex justify-between items-center">
+                  <h1 className="text-3xl font-bold">Categorias de Cursos</h1>
+                </div>
+                <CategoryGrid 
+                  categories={categories} 
+                  onCategorySelect={handleCategorySelect} 
+                />
+              </>
+            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredCourses.map((course) => (
-                <CourseCard key={course.id} course={course} showFullDetails />
-              ))}
-            </div>
+            {coursesView === 'lessons' && selectedCategory && (
+              <CategoryLessons
+                categoryId={selectedCategory.id}
+                categoryName={selectedCategory.name}
+                onBack={handleBackToCategories}
+                onLessonSelect={handleLessonSelect}
+              />
+            )}
+
+            {coursesView === 'player' && selectedLesson && (
+              <LessonPlayer
+                lesson={selectedLesson}
+                onBack={handleBackToLessons}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="trends">
