@@ -354,6 +354,30 @@ export type Database = {
           },
         ]
       }
+      user_engagement: {
+        Row: {
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_lesson_progress: {
         Row: {
           completed_at: string | null
@@ -422,6 +446,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sessions: {
+        Row: {
+          duration_seconds: number | null
+          id: string
+          last_activity: string
+          pages_visited: number | null
+          session_id: string
+          started_at: string
+          user_id: string | null
+        }
+        Insert: {
+          duration_seconds?: number | null
+          id?: string
+          last_activity?: string
+          pages_visited?: number | null
+          session_id: string
+          started_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          duration_seconds?: number | null
+          id?: string
+          last_activity?: string
+          pages_visited?: number | null
+          session_id?: string
+          started_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -430,6 +484,10 @@ export type Database = {
       can_access_premium: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      get_analytics_data: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       get_category_progress: {
         Args: { p_category_id: number; p_user_id: string }

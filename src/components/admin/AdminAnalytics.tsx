@@ -71,7 +71,44 @@ const AdminAnalytics = () => {
         count: ratingsData?.filter(r => r.rating === rating).length || 0
       }));
 
-      // Top aulas mais bem avaliadas
+      // Buscar dados reais de visualização de páginas
+      const { data: pageViewsData } = await supabase
+        .from('page_analytics')
+        .select('page_path')
+        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+
+      const pageViewsCount = pageViewsData?.reduce((acc, view) => {
+        let pageName = view.page_path;
+        // Mapear paths para nomes amigáveis
+        switch (view.page_path) {
+          case '/':
+            pageName = 'Dashboard';
+            break;
+          case '/courses':
+            pageName = 'Cursos';
+            break;
+          case '/profile':
+            pageName = 'Perfil';
+            break;
+          case '/admin':
+            pageName = 'Admin';
+            break;
+          default:
+            if (view.page_path.startsWith('/event/')) {
+              pageName = view.page_path.replace('/event/', '');
+            }
+        }
+        
+        acc[pageName] = (acc[pageName] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+      const pageViews = Object.entries(pageViewsCount)
+        .map(([page, views]) => ({ page, views }))
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 10);
+
+      // Top aulas mais bem avaliadas com dados reais
       const { data: ratingsWithLessons } = await supabase
         .from('lesson_ratings')
         .select('lesson_id, rating');
@@ -103,15 +140,6 @@ const AdminAnalytics = () => {
         }))
         .sort((a, b) => parseFloat(b.average) - parseFloat(a.average))
         .slice(0, 5);
-
-      // Simular dados de visualização de páginas (seria implementado com tracking real)
-      const pageViews = [
-        { page: 'Dashboard', views: Math.floor(Math.random() * 1000) + 500 },
-        { page: 'Cursos', views: Math.floor(Math.random() * 800) + 300 },
-        { page: 'Aulas', views: Math.floor(Math.random() * 600) + 200 },
-        { page: 'Perfil', views: Math.floor(Math.random() * 400) + 100 },
-        { page: 'Admin', views: Math.floor(Math.random() * 200) + 50 }
-      ];
 
       setAnalytics({
         totalUsers: totalUsers || 0,

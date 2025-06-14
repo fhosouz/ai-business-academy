@@ -33,43 +33,27 @@ export const useAnalytics = () => {
         referrer: document.referrer || null
       });
 
-      // Update or create session
-      const { data: existingSession } = await supabase
-        .from('user_sessions')
-        .select('*')
-        .eq('session_id', sessionId)
-        .single();
-
-      if (existingSession) {
-        await supabase
-          .from('user_sessions')
-          .update({
-            last_activity: new Date().toISOString(),
-            pages_visited: existingSession.pages_visited + 1
-          })
-          .eq('session_id', sessionId);
-      } else {
-        await supabase.from('user_sessions').insert({
-          user_id: user?.id || null,
-          session_id: sessionId,
-          pages_visited: 1
-        });
-      }
+      console.log(`Page view tracked: ${path}`);
     } catch (error) {
       console.error('Error tracking page view:', error);
     }
   }, [user]);
 
-  // Track user engagement events
+  // Track user engagement events using page_analytics table temporarily
   const trackEvent = useCallback(async (eventType: string, eventData?: any) => {
     if (!user) return;
 
     try {
-      await supabase.from('user_engagement').insert({
+      // Use page_analytics table with special path to track events
+      await supabase.from('page_analytics').insert({
         user_id: user.id,
-        event_type: eventType,
-        event_data: eventData || null
+        page_path: `/event/${eventType}`,
+        session_id: getSessionId(),
+        user_agent: JSON.stringify(eventData || {}),
+        referrer: eventType
       });
+
+      console.log(`Event tracked: ${eventType}`, eventData);
     } catch (error) {
       console.error('Error tracking event:', error);
     }

@@ -19,11 +19,13 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useUserProgress } from "@/hooks/useUserProgress";
 import { useIndexData } from "@/hooks/useIndexData";
 import { useIndexNavigation } from "@/hooks/useIndexNavigation";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 const Index = () => {
   const { isAdmin, loading: roleLoading } = useUserRole();
   const { userProgress } = useUserProgress();
   const { categories, courses } = useIndexData();
+  const { trackEvent } = useAnalytics(); // Add analytics tracking
   const {
     activeTab,
     coursesView,
@@ -40,6 +42,17 @@ const Index = () => {
     handleSearchResult,
     handleTabChange
   } = useIndexNavigation(courses);
+
+  // Enhanced event handlers with analytics tracking
+  const handleCourseSelectWithTracking = (courseId: number, courseName: string) => {
+    trackEvent('course_view', { course_id: courseId, course_name: courseName });
+    handleCourseSelect(courseId, courseName);
+  };
+
+  const handleLessonSelectWithTracking = (lesson: any) => {
+    trackEvent('lesson_start', { lesson_id: lesson.id, lesson_name: lesson.title });
+    handleLessonSelect(lesson);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -93,7 +106,7 @@ const Index = () => {
               <ContinueLearning onLessonSelect={handleContinueLearningSelect} />
             </div>
 
-            <CoursesGrid courses={courses} onCourseSelect={handleCourseSelect} />
+            <CoursesGrid courses={courses} onCourseSelect={handleCourseSelectWithTracking} />
           </TabsContent>
 
           <TabsContent value="courses" className="space-y-8">
@@ -102,7 +115,7 @@ const Index = () => {
                 <div className="flex justify-between items-center">
                   <h1 className="text-3xl font-bold">Cursos Disponíveis</h1>
                 </div>
-                <CoursesByCategory onCourseSelect={handleCourseSelect} />
+                <CoursesByCategory onCourseSelect={handleCourseSelectWithTracking} />
               </>
             )}
 
@@ -112,7 +125,7 @@ const Index = () => {
                 categoryName={selectedCategory.name}
                 courseId={selectedCategory.courseId}
                 onBack={handleBackToCategories}
-                onLessonSelect={handleLessonSelect}
+                onLessonSelect={handleLessonSelectWithTracking}
               />
             )}
 
