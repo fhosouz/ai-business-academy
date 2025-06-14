@@ -44,8 +44,12 @@ const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
                 controls 
                 className="w-full h-full object-cover"
                 src={lesson.video_url}
-                poster="/placeholder.svg"
+                crossOrigin="anonymous"
+                preload="metadata"
               >
+                <source src={lesson.video_url} type="video/mp4" />
+                <source src={lesson.video_url} type="video/webm" />
+                <source src={lesson.video_url} type="video/ogg" />
                 Seu navegador não suporta vídeos HTML5.
               </video>
             </div>

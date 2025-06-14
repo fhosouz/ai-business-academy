@@ -9,9 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 
 interface VideoUploadProps {
   onVideoUploaded: (videoUrl: string, fileName: string) => void;
+  courseId: number;
 }
 
-const VideoUpload = ({ onVideoUploaded }: VideoUploadProps) => {
+const VideoUpload = ({ onVideoUploaded, courseId }: VideoUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { toast } = useToast();
@@ -65,14 +66,14 @@ const VideoUpload = ({ onVideoUploaded }: VideoUploadProps) => {
         throw new Error('Usuário não autenticado');
       }
 
-      // Clean filename and add timestamp
+      // Clean filename and organize by course
       const fileExtension = selectedFile.name.split('.').pop();
       const cleanFileName = selectedFile.name
         .replace(/\.[^/.]+$/, "") // Remove extension
         .replace(/[^a-zA-Z0-9]/g, '-') // Replace special chars with dash
         .toLowerCase();
       const fileName = `${Date.now()}-${cleanFileName}.${fileExtension}`;
-      const filePath = `lessons/${fileName}`;
+      const filePath = `${courseId}/${fileName}`;
 
       console.log('📁 Upload path:', filePath);
       console.log('📊 File details:', {
@@ -90,7 +91,7 @@ const VideoUpload = ({ onVideoUploaded }: VideoUploadProps) => {
       // Attempt upload
       console.log('⬆️ Starting upload to bucket...');
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('course-videos')
+        .from('Lessons-content')
         .upload(filePath, selectedFile, {
           cacheControl: '3600',
           upsert: false
@@ -110,7 +111,7 @@ const VideoUpload = ({ onVideoUploaded }: VideoUploadProps) => {
       // Generate public URL
       console.log('🔗 Generating public URL...');
       const { data: { publicUrl } } = supabase.storage
-        .from('course-videos')
+        .from('Lessons-content')
         .getPublicUrl(filePath);
 
       console.log('🔗 Public URL generated:', publicUrl);
@@ -118,8 +119,8 @@ const VideoUpload = ({ onVideoUploaded }: VideoUploadProps) => {
       // Verify the file was uploaded by listing it
       console.log('🔍 Verifying upload...');
       const { data: files, error: listError } = await supabase.storage
-        .from('course-videos')
-        .list('lessons/', {
+        .from('Lessons-content')
+        .list(`${courseId}/`, {
           limit: 100,
           search: cleanFileName
         });

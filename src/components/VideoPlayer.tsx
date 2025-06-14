@@ -26,8 +26,8 @@ const VideoPlayer = ({ videoFileName, title, onClose }: VideoPlayerProps) => {
       
       // First try to list files in the bucket to find matching video
       const { data: files, error: listError } = await supabase.storage
-        .from('course-videos')
-        .list('lessons/', {
+        .from('Lessons-content')
+        .list('1/', {
           limit: 100
         });
 
@@ -56,8 +56,8 @@ const VideoPlayer = ({ videoFileName, title, onClose }: VideoPlayerProps) => {
       
       // Get the video URL from storage
       const { data: { publicUrl } } = supabase.storage
-        .from('course-videos')
-        .getPublicUrl(`lessons/${actualFileName}`);
+        .from('Lessons-content')
+        .getPublicUrl(`1/${actualFileName}`);
       
       setVideoUrl(publicUrl);
     } catch (error) {

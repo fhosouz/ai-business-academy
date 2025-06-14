@@ -141,7 +141,7 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editi
             <CardTitle>{editingLesson ? 'Editar Aula' : 'Nova Aula'}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <VideoUpload onVideoUploaded={handleVideoUploaded} />
+            <VideoUpload onVideoUploaded={handleVideoUploaded} courseId={courseId} />
             
             <div>
               <Label htmlFor="lesson-title">Título da Aula</Label>
