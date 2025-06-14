@@ -46,7 +46,7 @@ const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
         
         <CardContent className="space-y-6">
           {lesson.video_url ? (
-            <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+            <div className="w-full aspect-video bg-muted rounded-lg overflow-hidden">
               <video 
                 controls 
                 className="w-full h-full object-cover"

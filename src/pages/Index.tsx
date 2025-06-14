@@ -20,6 +20,7 @@ import { Lesson } from "@/components/lesson/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -30,6 +31,7 @@ const Index = () => {
   const [adminView, setAdminView] = useState<'lessons' | 'admins'>('lessons');
   const { toast } = useToast();
   const { isAdmin, loading: roleLoading } = useUserRole();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchCategories();
@@ -78,6 +80,35 @@ const Index = () => {
   const handleBackToLessons = () => {
     setCoursesView('lessons');
     setSelectedLesson(null);
+  };
+
+  // Função para extrair nome do usuário
+  const getUserDisplayName = () => {
+    if (!user) return "Usuário";
+    
+    // Tenta primeiro o display_name dos metadados
+    const displayName = user.user_metadata?.display_name || user.user_metadata?.full_name;
+    if (displayName) return displayName;
+    
+    // Se não tem, usa a primeira parte do email
+    if (user.email) {
+      const emailName = user.email.split('@')[0];
+      return emailName.charAt(0).toUpperCase() + emailName.slice(1);
+    }
+    
+    return "Usuário";
+  };
+
+  // Função para extrair iniciais do usuário
+  const getUserInitials = () => {
+    const displayName = getUserDisplayName();
+    if (displayName === "Usuário") return "U";
+    
+    const names = displayName.split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[1][0]).toUpperCase();
+    }
+    return displayName.substring(0, 2).toUpperCase();
   };
 
   const userProgress = {
@@ -175,7 +206,7 @@ const Index = () => {
             <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl p-8 text-white">
               <div className="flex justify-between items-start">
                 <div>
-                  <h1 className="text-3xl font-bold mb-2">Bem-vindo de volta, João!</h1>
+                  <h1 className="text-3xl font-bold mb-2">Bem-vindo de volta, {getUserDisplayName()}!</h1>
                   <p className="text-blue-100 text-lg">Continue sua jornada no mundo da Inteligência Artificial</p>
                 </div>
                 <div className="text-right">
@@ -311,14 +342,14 @@ const Index = () => {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                      JS
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold">João Santos</h3>
-                      <p className="text-gray-600">joao.santos@email.com</p>
-                      <Badge className="mt-2">Plano Premium</Badge>
-                    </div>
+                     <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                       {getUserInitials()}
+                     </div>
+                     <div>
+                       <h3 className="text-xl font-semibold">{getUserDisplayName()}</h3>
+                       <p className="text-gray-600">{user?.email || "usuario@email.com"}</p>
+                       <Badge className="mt-2">Plano Premium</Badge>
+                     </div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
