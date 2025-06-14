@@ -46,14 +46,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/`
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+      
+      if (error) {
+        console.error('Error signing in with Google:', error);
+        
+        // Mensagens de erro mais específicas
+        let errorMessage = 'Não foi possível realizar a autenticação';
+        
+        if (error.message?.includes('provider is not enabled')) {
+          errorMessage = 'Login com Google não está habilitado. Entre em contato com o suporte.';
+        } else if (error.message?.includes('Invalid redirect URL')) {
+          errorMessage = 'Erro de configuração. Tente novamente em alguns instantes.';
+        } else if (error.message?.includes('access_denied')) {
+          errorMessage = 'Acesso negado. Você cancelou a autenticação.';
+        } else if (error.message?.includes('network')) {
+          errorMessage = 'Problema de conexão. Verifique sua internet e tente novamente.';
+        }
+        
+        throw new Error(errorMessage);
       }
-    });
-    if (error) {
-      console.error('Error signing in with Google:', error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro inesperado ao fazer login';
+      throw new Error(message);
     }
   };
 
