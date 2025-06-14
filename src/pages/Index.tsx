@@ -134,7 +134,7 @@ const Index = () => {
             setSelectedLesson(null);
           }
         }} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-8">
+          <TabsList className={`grid w-full mb-8 ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'}`}>
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <Home className="w-4 h-4" />
               Dashboard

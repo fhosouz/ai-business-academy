@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useUserRole } from "@/hooks/useUserRole";
 import LessonForm from "./lesson/LessonForm";
 import LessonList from "./lesson/LessonList";
 import { Lesson, Category } from "./lesson/types";
@@ -17,6 +18,7 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isAddingLesson, setIsAddingLesson] = useState(false);
   const { toast } = useToast();
+  const { isAdmin } = useUserRole();
 
   useEffect(() => {
     fetchLessons();
@@ -69,6 +71,20 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
   const handleLessonDeleted = () => {
     fetchLessons();
   };
+
+  if (!isAdmin) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <Shield className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-semibold mb-2">Acesso Negado</h3>
+          <p className="text-muted-foreground">
+            Você não tem permissão para gerenciar aulas.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
