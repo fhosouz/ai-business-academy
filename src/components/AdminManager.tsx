@@ -96,14 +96,14 @@ const AdminManager = () => {
 
     setLoading(true);
     try {
-      // First, get user by email from auth.users
-      const { data: users, error: fetchError } = await supabase.auth.admin.listUsers();
+      // Search for user by email in profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('display_name', newAdminEmail) // Assuming display_name contains email for now
+        .single();
       
-      if (fetchError) throw fetchError;
-      
-      const targetUser = users.users.find(user => user.email === newAdminEmail);
-      
-      if (!targetUser) {
+      if (profileError || !profile) {
         toast({
           title: "Erro",
           description: "Usuário com este email não encontrado. O usuário deve estar registrado primeiro.",
@@ -111,12 +111,14 @@ const AdminManager = () => {
         });
         return;
       }
-
+      
+      const targetUserId = profile.user_id;
+      
       // Check if user already has admin role
       const { data: existingRole } = await supabase
         .from('user_roles')
         .select('*')
-        .eq('user_id', targetUser.id)
+        .eq('user_id', targetUserId)
         .eq('role', 'admin')
         .single();
 
@@ -133,7 +135,7 @@ const AdminManager = () => {
       const { error: insertError } = await supabase
         .from('user_roles')
         .upsert({
-          user_id: targetUser.id,
+          user_id: targetUserId,
           role: 'admin'
         });
 

@@ -5,8 +5,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Bell, Search, User, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import SearchComponent from "./SearchComponent";
 
-const Header = () => {
+interface HeaderProps {
+  onResultSelect?: (result: any) => void;
+}
+
+const Header = ({ onResultSelect }: HeaderProps) => {
   const { user, signOut } = useAuth();
 
   const handleSignOut = async () => {
@@ -36,17 +41,21 @@ const Header = () => {
 
           {/* Search Bar - Hidden on mobile */}
           <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                id="search-courses"
-                name="search"
-                type="text"
-                placeholder="Buscar cursos, tópicos..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                aria-label="Buscar cursos e tópicos"
-              />
-            </div>
+            {onResultSelect ? (
+              <SearchComponent onResultSelect={onResultSelect} />
+            ) : (
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  id="search-courses"
+                  name="search"
+                  type="text"
+                  placeholder="Buscar cursos, tópicos..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  aria-label="Buscar cursos e tópicos"
+                />
+              </div>
+            )}
           </div>
 
           {/* Right side */}
