@@ -54,10 +54,12 @@ const CategoryLessons = ({ categoryId, categoryName, onBack, onLessonSelect }: C
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('lesson-progress-updated', handleLessonProgressUpdate);
+    window.addEventListener('user-progress-updated', handleLessonProgressUpdate);
     
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('lesson-progress-updated', handleLessonProgressUpdate);
+      window.removeEventListener('user-progress-updated', handleLessonProgressUpdate);
     };
   }, [user]);
 

@@ -93,6 +93,8 @@ const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
           status: 'completed',
           started_at: progress?.started_at || new Date().toISOString(),
           completed_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,lesson_id'
         });
 
       if (error) throw error;
@@ -104,8 +106,14 @@ const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
       
       await fetchProgress();
       
-      // Forçar atualização da página de categorias se disponível
+      // Forçar atualização em todos os componentes que mostram progresso
       window.dispatchEvent(new CustomEvent('lesson-progress-updated'));
+      window.dispatchEvent(new CustomEvent('user-progress-updated'));
+      
+      // Aguardar um pouco para garantir que a atualização seja processada
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('Error marking as completed:', error);
       toast({

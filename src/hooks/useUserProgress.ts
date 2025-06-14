@@ -29,6 +29,23 @@ export const useUserProgress = () => {
     }
   }, [user]);
 
+  // Listen for progress updates
+  useEffect(() => {
+    const handleProgressUpdate = () => {
+      if (user) {
+        fetchUserProgress();
+      }
+    };
+
+    window.addEventListener('user-progress-updated', handleProgressUpdate);
+    window.addEventListener('lesson-progress-updated', handleProgressUpdate);
+    
+    return () => {
+      window.removeEventListener('user-progress-updated', handleProgressUpdate);
+      window.removeEventListener('lesson-progress-updated', handleProgressUpdate);
+    };
+  }, [user]);
+
   const fetchUserProgress = async () => {
     if (!user) return;
 
