@@ -1,0 +1,331 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { Activity, Users, Star, TrendingUp, Eye, Award } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+const AdminAnalytics = () => {
+  const [analytics, setAnalytics] = useState({
+    totalUsers: 0,
+    totalLessons: 0,
+    totalRatings: 0,
+    averageRating: 0,
+    premiumUsers: 0,
+    pageViews: [],
+    usersByPlan: [],
+    ratingDistribution: [],
+    topRatedLessons: []
+  });
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
+
+  const fetchAnalytics = async () => {
+    try {
+      // Buscar total de usuários
+      const { count: totalUsers } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      // Buscar total de aulas
+      const { count: totalLessons } = await supabase
+        .from('lessons')
+        .select('*', { count: 'exact', head: true });
+
+      // Buscar estatísticas de avaliações
+      const { data: ratingsData } = await supabase
+        .from('lesson_ratings')
+        .select('rating');
+
+      const totalRatings = ratingsData?.length || 0;
+      const averageRating = totalRatings > 0 
+        ? ratingsData.reduce((sum, r) => sum + r.rating, 0) / totalRatings 
+        : 0;
+
+      // Buscar usuários por plano
+      const { data: userPlans } = await supabase
+        .from('user_roles')
+        .select('plan_type');
+
+      const planDistribution = userPlans?.reduce((acc, user) => {
+        const plan = user.plan_type || 'free';
+        acc[plan] = (acc[plan] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+      const usersByPlan = Object.entries(planDistribution).map(([plan, count]) => ({
+        name: plan === 'free' ? 'Free' : plan === 'premium' ? 'Premium' : 'Enterprise',
+        value: count
+      }));
+
+      const premiumUsers = (planDistribution.premium || 0) + (planDistribution.enterprise || 0);
+
+      // Distribuição de avaliações
+      const ratingDistribution = [1, 2, 3, 4, 5].map(rating => ({
+        rating: `${rating} estrela${rating > 1 ? 's' : ''}`,
+        count: ratingsData?.filter(r => r.rating === rating).length || 0
+      }));
+
+      // Top aulas mais bem avaliadas
+      const { data: ratingsWithLessons } = await supabase
+        .from('lesson_ratings')
+        .select('lesson_id, rating');
+
+      const { data: allLessons } = await supabase
+        .from('lessons')
+        .select('id, title');
+
+      const lessonAverages = ratingsWithLessons?.reduce((acc, rating) => {
+        const lessonId = rating.lesson_id;
+        const lesson = allLessons?.find(l => l.id === lessonId);
+        if (!acc[lessonId]) {
+          acc[lessonId] = {
+            title: lesson?.title || 'Aula sem título',
+            total: 0,
+            count: 0
+          };
+        }
+        acc[lessonId].total += rating.rating;
+        acc[lessonId].count += 1;
+        return acc;
+      }, {} as Record<string, any>) || {};
+
+      const topRatedLessons = Object.entries(lessonAverages)
+        .map(([id, data]) => ({
+          title: data.title,
+          average: (data.total / data.count).toFixed(1),
+          count: data.count
+        }))
+        .sort((a, b) => parseFloat(b.average) - parseFloat(a.average))
+        .slice(0, 5);
+
+      // Simular dados de visualização de páginas (seria implementado com tracking real)
+      const pageViews = [
+        { page: 'Dashboard', views: Math.floor(Math.random() * 1000) + 500 },
+        { page: 'Cursos', views: Math.floor(Math.random() * 800) + 300 },
+        { page: 'Aulas', views: Math.floor(Math.random() * 600) + 200 },
+        { page: 'Perfil', views: Math.floor(Math.random() * 400) + 100 },
+        { page: 'Admin', views: Math.floor(Math.random() * 200) + 50 }
+      ];
+
+      setAnalytics({
+        totalUsers: totalUsers || 0,
+        totalLessons: totalLessons || 0,
+        totalRatings,
+        averageRating: parseFloat(averageRating.toFixed(1)),
+        premiumUsers,
+        pageViews,
+        usersByPlan,
+        ratingDistribution,
+        topRatedLessons
+      });
+
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar analytics.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="animate-pulse space-y-3">
+                  <div className="h-4 bg-gray-200 rounded w-24"></div>
+                  <div className="h-8 bg-gray-200 rounded w-16"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold mb-2">Analytics da Plataforma</h1>
+        <p className="text-muted-foreground">
+          Acompanhe métricas importantes para medir o sucesso da plataforma
+        </p>
+      </div>
+
+      {/* Cards de métricas principais */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total de Usuários</p>
+                <p className="text-2xl font-bold">{analytics.totalUsers}</p>
+              </div>
+              <Users className="w-8 h-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Usuários Premium</p>
+                <p className="text-2xl font-bold">{analytics.premiumUsers}</p>
+              </div>
+              <Award className="w-8 h-8 text-yellow-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Satisfação Média</p>
+                <p className="text-2xl font-bold">{analytics.averageRating}/5</p>
+              </div>
+              <Star className="w-8 h-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total de Aulas</p>
+                <p className="text-2xl font-bold">{analytics.totalLessons}</p>
+              </div>
+              <Activity className="w-8 h-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Gráficos */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Heatmap de páginas mais acessadas */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Páginas Mais Acessadas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={analytics.pageViews}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="page" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="views" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Distribuição de usuários por plano */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Adoção de Planos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={analytics.usersByPlan}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value }) => `${name}: ${value}`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {analytics.usersByPlan.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Distribuição de avaliações */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Star className="w-5 h-5" />
+              Distribuição de Avaliações
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={analytics.ratingDistribution}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="rating" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="#f59e0b" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Top aulas mais bem avaliadas */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="w-5 h-5" />
+              Aulas Mais Bem Avaliadas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {analytics.topRatedLessons.map((lesson, index) => (
+                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <p className="font-medium line-clamp-1">{lesson.title}</p>
+                    <p className="text-sm text-muted-foreground">{lesson.count} avaliações</p>
+                  </div>
+                  <Badge variant="outline" className="bg-yellow-50">
+                    <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
+                    {lesson.average}
+                  </Badge>
+                </div>
+              ))}
+              {analytics.topRatedLessons.length === 0 && (
+                <p className="text-center text-muted-foreground py-4">
+                  Nenhuma avaliação encontrada
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default AdminAnalytics;

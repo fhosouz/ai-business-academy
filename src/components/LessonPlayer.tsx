@@ -6,6 +6,7 @@ import { ArrowLeft, Play, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import LessonRating from "@/components/LessonRating";
 
 interface Lesson {
   id: string;
@@ -149,7 +150,7 @@ const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
         <CardHeader>
           <div className="flex items-center gap-2 mb-2">
             <Badge variant="outline">Aula {lesson.order_index + 1}</Badge>
-            {lesson.is_free && <Badge variant="secondary">Gratuita</Badge>}
+            {lesson.is_free ? <Badge className="bg-green-500 text-white">Free</Badge> : <Badge className="bg-yellow-500 text-white">Premium</Badge>}
             {progress?.status === 'completed' && <Badge className="bg-green-600">Concluída</Badge>}
             {progress?.status === 'in_progress' && <Badge variant="secondary">Em Progresso</Badge>}
           </div>
@@ -201,6 +202,9 @@ const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
           )}
         </CardContent>
       </Card>
+
+      {/* Avaliação CSAT */}
+      <LessonRating lessonId={lesson.id} lessonTitle={lesson.title} />
     </div>
   );
 };

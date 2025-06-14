@@ -28,11 +28,16 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
 
   const fetchLessons = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('lessons')
-        .select('*, categories(id, name)')
-        .eq('course_id', courseId)
-        .order('order_index');
+        .select('*, categories(id, name)');
+
+      // Se não for admin, filtrar por course_id
+      if (!isAdmin) {
+        query = query.eq('course_id', courseId);
+      }
+
+      const { data, error } = await query.order('order_index');
 
       if (error) throw error;
       setLessons(data || []);
@@ -104,10 +109,10 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="w-5 h-5" />
-            Gerenciar Aulas - {courseName}
+            {isAdmin ? 'Gerenciar Todas as Aulas' : `Gerenciar Aulas - ${courseName}`}
           </CardTitle>
           <CardDescription>
-            Adicione e gerencie as aulas do curso
+            {isAdmin ? 'Visualize e gerencie todas as aulas da plataforma' : 'Adicione e gerencie as aulas do curso'}
           </CardDescription>
         </CardHeader>
       </Card>

@@ -253,7 +253,7 @@ const CategoryLessons = ({ categoryId, categoryName, courseId, onBack, onLessonS
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Badge variant="outline">Aula {index + 1}</Badge>
-                    {lesson.is_free && <Badge variant="secondary">Gratuita</Badge>}
+                    {lesson.is_free ? <Badge className="bg-green-500 text-white">Free</Badge> : <Badge className="bg-yellow-500 text-white">Premium</Badge>}
                   </div>
                   
                   <h3 className="font-semibold text-lg mb-2 line-clamp-2">{lesson.title}</h3>

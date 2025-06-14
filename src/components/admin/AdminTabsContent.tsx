@@ -1,15 +1,16 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Users, Shield } from "lucide-react";
+import { BookOpen, Users, Shield, BarChart3 } from "lucide-react";
 import CourseManager from "@/components/CourseManager";
 import LessonManager from "@/components/LessonManager";
 import AdminManager from "@/components/AdminManager";
+import AdminAnalytics from "@/components/admin/AdminAnalytics";
 
 interface AdminTabsContentProps {
   isAdmin: boolean;
   roleLoading: boolean;
-  adminView: 'courses' | 'lessons' | 'admins';
-  setAdminView: (view: 'courses' | 'lessons' | 'admins') => void;
+  adminView: 'courses' | 'lessons' | 'admins' | 'analytics';
+  setAdminView: (view: 'courses' | 'lessons' | 'admins' | 'analytics') => void;
 }
 
 const AdminTabsContent = ({ isAdmin, roleLoading, adminView, setAdminView }: AdminTabsContentProps) => {
@@ -42,21 +43,29 @@ const AdminTabsContent = ({ isAdmin, roleLoading, adminView, setAdminView }: Adm
         <h1 className="text-3xl font-bold">Painel de Administração</h1>
       </div>
       
-      <Tabs value={adminView} onValueChange={(value) => setAdminView(value as 'courses' | 'lessons' | 'admins')} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
+      <Tabs value={adminView} onValueChange={(value) => setAdminView(value as 'courses' | 'lessons' | 'admins' | 'analytics')} className="w-full">
+        <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Analytics
+          </TabsTrigger>
           <TabsTrigger value="courses" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
-            Gerenciar Cursos
+            Cursos
           </TabsTrigger>
           <TabsTrigger value="lessons" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
-            Gerenciar Aulas
+            Aulas
           </TabsTrigger>
           <TabsTrigger value="admins" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
-            Gerenciar Administradores
+            Admins
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="analytics">
+          <AdminAnalytics />
+        </TabsContent>
 
         <TabsContent value="courses">
           <CourseManager />

@@ -42,13 +42,13 @@ const PlanBadge = ({ plan, size = 'md', showIcon = true }: PlanBadgeProps) => {
   const getLabel = () => {
     switch (plan) {
       case 'free':
-        return 'Gratuito';
+        return 'Free';
       case 'premium':
         return 'Premium';
       case 'enterprise':
         return 'Enterprise';
       default:
-        return 'Gratuito';
+        return 'Free';
     }
   };
 

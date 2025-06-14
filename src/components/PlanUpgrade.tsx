@@ -33,7 +33,7 @@ const PlanUpgrade = () => {
   const plans = [
     {
       id: 'free',
-      name: 'Gratuito',
+      name: 'Free',
       icon: Star,
       description: 'Acesso básico à plataforma',
       features: [
@@ -82,7 +82,7 @@ const PlanUpgrade = () => {
       <div>
         <h2 className="text-2xl font-bold mb-2">Seu Plano Atual</h2>
         <p className="text-muted-foreground">
-          Você está no plano <strong>{plans.find(p => p.current)?.name || 'Gratuito'}</strong>
+          Você está no plano <strong>{plans.find(p => p.current)?.name || 'Free'}</strong>
         </p>
       </div>
 

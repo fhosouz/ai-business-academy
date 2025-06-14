@@ -149,11 +149,9 @@ const CoursesByCategory = ({ onCourseSelect }: CoursesByCategoryProps) => {
                       e.currentTarget.src = `https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=200&fit=crop`;
                     }}
                   />
-                  {course.is_premium && (
-                    <Badge className="absolute top-2 right-2 bg-yellow-500 text-white">
-                      Premium
-                    </Badge>
-                  )}
+                  <Badge className={`absolute top-2 right-2 ${course.is_premium ? 'bg-yellow-500 text-white' : 'bg-green-500 text-white'}`}>
+                    {course.is_premium ? 'Premium' : 'Free'}
+                  </Badge>
                 </div>
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-lg mb-2 line-clamp-2">{course.title}</h3>
