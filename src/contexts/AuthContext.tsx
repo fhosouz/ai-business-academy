@@ -26,9 +26,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('AuthProvider: Setting up auth listeners');
+    
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -36,34 +39,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Sincronizar dados do Google no login
         if (event === 'SIGNED_IN' && session?.user) {
           const user = session.user;
+          console.log('User signed in:', user.id);
           console.log('User metadata:', user.user_metadata);
           console.log('App metadata:', user.app_metadata);
           
-          // Sincronizar dados para qualquer login (não apenas Google)
-          if (user.user_metadata && Object.keys(user.user_metadata).length > 0) {
-            try {
-              // Chamar função para sincronizar dados do usuário
-              await supabase.rpc('sync_google_user_data', {
-                _user_id: user.id,
-                _metadata: user.user_metadata
-              });
-              console.log('Dados do usuário sincronizados com sucesso');
-            } catch (error) {
-              console.error('Erro ao sincronizar dados do usuário:', error);
+          // Pequeno delay para evitar problemas de timing
+          setTimeout(async () => {
+            // Sincronizar dados para qualquer login (não apenas Google)
+            if (user.user_metadata && Object.keys(user.user_metadata).length > 0) {
+              try {
+                console.log('Calling sync_google_user_data...');
+                // Chamar função para sincronizar dados do usuário
+                const { error } = await supabase.rpc('sync_google_user_data', {
+                  _user_id: user.id,
+                  _metadata: user.user_metadata
+                });
+                
+                if (error) {
+                  console.error('Error in sync_google_user_data:', error);
+                } else {
+                  console.log('Dados do usuário sincronizados com sucesso');
+                }
+              } catch (error) {
+                console.error('Erro ao sincronizar dados do usuário:', error);
+              }
             }
-          }
+          }, 100);
         }
       }
     );
 
     // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    console.log('AuthProvider: Checking for existing session');
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Error getting session:', error);
+      }
+      console.log('Existing session found:', !!session);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('AuthProvider: Cleaning up subscription');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async () => {
