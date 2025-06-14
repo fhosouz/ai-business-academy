@@ -33,6 +33,7 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<{ id: number; name: string } | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [adminView, setAdminView] = useState<'courses' | 'lessons' | 'admins'>('courses');
   const { toast } = useToast();
   const { isAdmin, loading: roleLoading } = useUserRole();
@@ -41,6 +42,8 @@ const Index = () => {
 
   useEffect(() => {
     fetchCategories();
+    fetchCourses();
+    autoRegisterCourses();
   }, []);
 
   const fetchCategories = async () => {
@@ -62,6 +65,113 @@ const Index = () => {
     }
   };
 
+  const fetchCourses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select(`
+          *,
+          categories (
+            name
+          )
+        `)
+        .eq('status', 'published')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setCourses(data || []);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar cursos.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const autoRegisterCourses = async () => {
+    try {
+      // Buscar categorias para mapear os nomes
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('*');
+
+      if (categoriesError) throw categoriesError;
+
+      const categoryMap: { [key: string]: number } = {};
+      categoriesData?.forEach(cat => {
+        categoryMap[cat.name] = cat.id;
+      });
+
+      // Buscar cursos existentes
+      const { data: existingCourses, error: coursesError } = await supabase
+        .from('courses')
+        .select('title');
+
+      if (coursesError) throw coursesError;
+
+      const existingTitles = new Set(existingCourses?.map(course => course.title) || []);
+
+      // Cursos hardcoded para cadastrar
+      const coursesToRegister = [
+        {
+          title: "IA Generativa para Negócios",
+          description: "Aprenda como aplicar IA generativa para resolver problemas reais em sua empresa",
+          category_name: "Introdução a IA Generativa",
+          instructor: "Dr. Maria Silva",
+          image_url: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=600&h=400&fit=crop",
+          is_premium: false
+        },
+        {
+          title: "Prompt Engineering Avançado",
+          description: "Técnicas avançadas para criar prompts eficazes e obter melhores resultados",
+          category_name: "Prompt Engineering",
+          instructor: "João Santos",
+          image_url: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=600&h=400&fit=crop",
+          is_premium: true
+        },
+        {
+          title: "Automação Inteligente com IA",
+          description: "Como automatizar processos empresariais usando inteligência artificial",
+          category_name: "Agentes de AI",
+          instructor: "Ana Costa",
+          image_url: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=600&h=400&fit=crop",
+          is_premium: true
+        }
+      ];
+
+      // Cadastrar apenas cursos que ainda não existem
+      for (const course of coursesToRegister) {
+        if (!existingTitles.has(course.title)) {
+          const category_id = categoryMap[course.category_name];
+          if (category_id) {
+            const { error } = await supabase
+              .from('courses')
+              .insert({
+                title: course.title,
+                description: course.description,
+                category_id: category_id,
+                instructor: course.instructor,
+                image_url: course.image_url,
+                is_premium: course.is_premium,
+                status: 'published'
+              });
+
+            if (error) {
+              console.error('Error inserting course:', course.title, error);
+            }
+          }
+        }
+      }
+
+      // Recarregar cursos após o cadastro
+      fetchCourses();
+    } catch (error) {
+      console.error('Error auto-registering courses:', error);
+    }
+  };
+
   const handleCategorySelect = (categoryId: number, categoryName: string) => {
     setSelectedCategory({ id: categoryId, name: categoryName });
     setCoursesView('lessons');
@@ -70,6 +180,15 @@ const Index = () => {
   const handleContinueLearningSelect = (categoryId: number, categoryName: string) => {
     setActiveTab('courses');
     handleCategorySelect(categoryId, categoryName);
+  };
+
+  const handleCourseSelect = (courseId: number, courseName: string) => {
+    // Buscar a categoria do curso para navegação
+    const course = courses.find(c => c.id === courseId);
+    if (course) {
+      setActiveTab('courses');
+      handleCategorySelect(course.category_id, course.categories?.name || 'Curso');
+    }
   };
 
   const handleLessonSelect = (lesson: Lesson) => {
@@ -249,22 +368,56 @@ const Index = () => {
               <ContinueLearning onLessonSelect={handleContinueLearningSelect} />
             </div>
 
-            {/* Categories Grid */}
+            {/* Courses Grid */}
             <div>
               <h2 className="text-2xl font-bold mb-6">Explore por Categoria</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {categories.map((category, index) => (
-                  <Card key={index} className="hover:scale-105 transition-transform cursor-pointer">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {courses.map((course, index) => (
+                  <Card 
+                    key={course.id} 
+                    className="hover:scale-105 transition-transform cursor-pointer overflow-hidden"
+                    onClick={() => handleCourseSelect(course.id, course.title)}
+                  >
+                    <div className="relative h-32">
+                      <img 
+                        src={course.image_url || `https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=200&fit=crop`}
+                        alt={course.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = `https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=200&fit=crop`;
+                        }}
+                      />
+                      {course.is_premium && (
+                        <Badge className="absolute top-2 right-2 bg-yellow-500 text-white">
+                          Premium
+                        </Badge>
+                      )}
+                    </div>
                     <CardContent className="p-4">
-                      <div className={`w-12 h-12 rounded-xl ${category.color} mb-3 flex items-center justify-center`}>
-                        <BookOpen className="w-6 h-6 text-white" />
+                      <h3 className="font-semibold text-lg mb-2 line-clamp-2">{course.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{course.description}</p>
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline">{course.categories?.name}</Badge>
+                        {course.instructor && (
+                          <span className="text-xs text-muted-foreground">{course.instructor}</span>
+                        )}
                       </div>
-                      <h3 className="font-semibold text-sm mb-1">{category.name}</h3>
-                      <p className="text-xs text-gray-600">{category.count} cursos</p>
                     </CardContent>
                   </Card>
                 ))}
               </div>
+              
+              {courses.length === 0 && (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold mb-2">Nenhum curso disponível</h3>
+                    <p className="text-muted-foreground">
+                      Os cursos estão sendo carregados ou ainda não foram cadastrados.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </TabsContent>
 
