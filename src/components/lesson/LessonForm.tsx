@@ -35,7 +35,9 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editi
 
   // Sync form state when editingLesson changes
   useEffect(() => {
+    console.log('EditingLesson changed:', editingLesson);
     if (editingLesson) {
+      console.log('Setting form to edit mode');
       setIsOpen(true);
       setNewLesson({
         title: editingLesson.title || "",

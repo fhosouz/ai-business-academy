@@ -74,6 +74,7 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
   };
 
   const handleLessonEdit = (lesson: any) => {
+    console.log('Edit lesson clicked:', lesson);
     setEditingLesson(lesson);
   };
 
