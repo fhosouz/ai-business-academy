@@ -28,12 +28,12 @@ const VideoPlayer = ({ videoFileName, title, onClose }: VideoPlayerProps) => {
       const { data: files, error: listError } = await supabase.storage
         .from('course-videos')
         .list('lessons/', {
-          limit: 100,
-          search: 'introducao'
+          limit: 100
         });
 
       if (listError) {
         console.error('Error listing files:', listError);
+        return;
       }
 
       let actualFileName = videoFileName;
@@ -49,6 +49,8 @@ const VideoPlayer = ({ videoFileName, title, onClose }: VideoPlayerProps) => {
         if (matchingFile) {
           actualFileName = matchingFile.name;
           console.log('Found matching video file:', actualFileName);
+        } else {
+          console.log('No matching video file found. Available files:', files.map(f => f.name));
         }
       }
       
