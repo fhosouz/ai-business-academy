@@ -13,6 +13,7 @@ import TrendsSection from "@/components/TrendsSection";
 import ChatSupport from "@/components/ChatSupport";
 import LessonManager from "@/components/LessonManager";
 import AdminManager from "@/components/AdminManager";
+import CourseManager from "@/components/CourseManager";
 import CategoryGrid from "@/components/CategoryGrid";
 import CategoryLessons from "@/components/CategoryLessons";
 import LessonPlayer from "@/components/LessonPlayer";
@@ -32,7 +33,7 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<{ id: number; name: string } | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
-  const [adminView, setAdminView] = useState<'lessons' | 'admins'>('lessons');
+  const [adminView, setAdminView] = useState<'courses' | 'lessons' | 'admins'>('courses');
   const { toast } = useToast();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const { user } = useAuth();
@@ -323,8 +324,12 @@ const Index = () => {
                   <h1 className="text-3xl font-bold">Painel de Administração</h1>
                 </div>
                 
-                <Tabs value={adminView} onValueChange={(value) => setAdminView(value as 'lessons' | 'admins')} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                <Tabs value={adminView} onValueChange={(value) => setAdminView(value as 'courses' | 'lessons' | 'admins')} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 mb-6">
+                    <TabsTrigger value="courses" className="flex items-center gap-2">
+                      <BookOpen className="w-4 h-4" />
+                      Gerenciar Cursos
+                    </TabsTrigger>
                     <TabsTrigger value="lessons" className="flex items-center gap-2">
                       <BookOpen className="w-4 h-4" />
                       Gerenciar Aulas
@@ -334,6 +339,10 @@ const Index = () => {
                       Gerenciar Administradores
                     </TabsTrigger>
                   </TabsList>
+
+                  <TabsContent value="courses">
+                    <CourseManager />
+                  </TabsContent>
 
                   <TabsContent value="lessons">
                     <LessonManager 

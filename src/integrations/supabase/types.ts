@@ -33,6 +33,53 @@ export type Database = {
         }
         Relationships: []
       }
+      courses: {
+        Row: {
+          category_id: number
+          created_at: string
+          description: string | null
+          id: number
+          image_url: string | null
+          instructor: string | null
+          is_premium: boolean | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: number
+          created_at?: string
+          description?: string | null
+          id?: number
+          image_url?: string | null
+          instructor?: string | null
+          is_premium?: boolean | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: number
+          created_at?: string
+          description?: string | null
+          id?: number
+          image_url?: string | null
+          instructor?: string | null
+          is_premium?: boolean | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           created_at: string
@@ -58,6 +105,7 @@ export type Database = {
         Row: {
           category_id: number
           course_id: number
+          course_id_ref: number | null
           created_at: string
           description: string | null
           id: string
@@ -71,6 +119,7 @@ export type Database = {
         Insert: {
           category_id: number
           course_id: number
+          course_id_ref?: number | null
           created_at?: string
           description?: string | null
           id?: string
@@ -84,6 +133,7 @@ export type Database = {
         Update: {
           category_id?: number
           course_id?: number
+          course_id_ref?: number | null
           created_at?: string
           description?: string | null
           id?: string
@@ -100,6 +150,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lessons_course_id_ref_fkey"
+            columns: ["course_id_ref"]
+            isOneToOne: false
+            referencedRelation: "courses"
             referencedColumns: ["id"]
           },
         ]
@@ -271,6 +328,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_category_progress: {
+        Args: { p_category_id: number; p_user_id: string }
+        Returns: number
+      }
+      get_course_progress: {
+        Args: { p_course_id: number; p_user_id: string }
+        Returns: number
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

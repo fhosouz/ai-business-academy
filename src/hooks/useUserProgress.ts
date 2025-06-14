@@ -67,11 +67,28 @@ export const useUserProgress = () => {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
 
-      // Get completed categories count
-      const { count: completedCategories } = await supabase
-        .from('user_certificates')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+      // Get completed categories (courses) count - categories where all lessons are completed
+      const { data: categories } = await supabase
+        .from('categories')
+        .select('id');
+
+      let completedCourses = 0;
+      if (categories) {
+        for (const category of categories) {
+          const { data: categoryProgress } = await supabase.rpc('get_category_progress', {
+            p_category_id: category.id,
+            p_user_id: user.id
+          });
+          if (categoryProgress === 100) {
+            completedCourses++;
+          }
+        }
+      }
+
+      // Get total categories (courses) count
+      const { count: totalCategories } = await supabase
+        .from('categories')
+        .select('*', { count: 'exact', head: true });
 
       const completedLessons = progressData?.filter(p => p.status === 'completed').length || 0;
       const inProgressLessons = progressData?.filter(p => p.status === 'in_progress').length || 0;
@@ -82,8 +99,8 @@ export const useUserProgress = () => {
       const level = Math.floor(totalXP / 500) + 1; // Level up every 500 XP
 
       setUserProgress({
-        totalCourses: completedCategories || 0,
-        completedCourses: completedCategories || 0,
+        totalCourses: totalCategories || 0,
+        completedCourses,
         inProgress: inProgressLessons,
         badges: totalBadges || 0,
         level,
