@@ -47,6 +47,12 @@ const VideoUpload = ({ onVideoUploaded }: VideoUploadProps) => {
     if (!selectedFile) return;
 
     setUploading(true);
+    console.log('Starting video upload...', {
+      fileName: selectedFile.name,
+      fileSize: selectedFile.size,
+      fileType: selectedFile.type
+    });
+
     try {
       // Clean filename and add timestamp
       const fileExtension = selectedFile.name.split('.').pop();
@@ -57,17 +63,24 @@ const VideoUpload = ({ onVideoUploaded }: VideoUploadProps) => {
       const fileName = `${Date.now()}-${cleanFileName}.${fileExtension}`;
       const filePath = `lessons/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log('Upload path:', filePath);
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('course-videos')
         .upload(filePath, selectedFile);
 
+      console.log('Upload result:', { uploadData, uploadError });
+
       if (uploadError) {
+        console.error('Upload error details:', uploadError);
         throw uploadError;
       }
 
       const { data: { publicUrl } } = supabase.storage
         .from('course-videos')
         .getPublicUrl(filePath);
+
+      console.log('Public URL generated:', publicUrl);
 
       onVideoUploaded(publicUrl, selectedFile.name);
       setSelectedFile(null);
@@ -80,7 +93,7 @@ const VideoUpload = ({ onVideoUploaded }: VideoUploadProps) => {
       console.error('Error uploading video:', error);
       toast({
         title: "Erro",
-        description: "Erro ao enviar vídeo. Tente novamente.",
+        description: `Erro ao enviar vídeo: ${error.message || 'Tente novamente.'}`,
         variant: "destructive",
       });
     } finally {
