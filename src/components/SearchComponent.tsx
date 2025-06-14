@@ -47,7 +47,7 @@ const SearchComponent = ({ onResultSelect }: SearchProps) => {
 
     setIsSearching(true);
     try {
-      // Search lessons
+      // Search lessons with enhanced text search
       const { data: lessonsData, error: lessonsError } = await supabase
         .from('lessons')
         .select(`
