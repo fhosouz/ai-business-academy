@@ -22,8 +22,11 @@ interface AdminUser {
 const AdminManager = () => {
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [newAdminPassword, setNewAdminPassword] = useState("");
+  const [newAdminName, setNewAdminName] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchingUsers, setFetchingUsers] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const { toast } = useToast();
   const { isAdmin } = useUserRole();
 
@@ -84,6 +87,69 @@ const AdminManager = () => {
     }
   };
 
+  const createNewAdmin = async () => {
+    if (!newAdminEmail || !newAdminPassword || !newAdminName) {
+      toast({
+        title: "Erro",
+        description: "Todos os campos são obrigatórios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Create new user with Supabase Auth
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: newAdminEmail,
+        password: newAdminPassword,
+        options: {
+          data: {
+            display_name: newAdminName
+          },
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (signUpError) throw signUpError;
+      
+      if (!data.user) {
+        throw new Error('Falha ao criar usuário');
+      }
+
+      // The profile and user role will be created automatically by the trigger
+      // But we need to update the role to admin
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .update({ role: 'admin' })
+        .eq('user_id', data.user.id);
+
+      if (roleError) throw roleError;
+
+      // Clear form
+      setNewAdminEmail("");
+      setNewAdminPassword("");
+      setNewAdminName("");
+      setShowCreateForm(false);
+      
+      fetchAdminUsers();
+
+      toast({
+        title: "Sucesso!",
+        description: "Novo administrador criado com sucesso.",
+      });
+    } catch (error: any) {
+      console.error('Error creating admin:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao criar administrador.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const addExistingAdmin = async () => {
     if (!newAdminEmail) {
       toast({
@@ -96,11 +162,11 @@ const AdminManager = () => {
 
     setLoading(true);
     try {
-      // Search for user by email in profiles table
+      // Search for user by email in profiles table using display_name for now
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('user_id')
-        .eq('display_name', newAdminEmail) // Assuming display_name contains email for now
+        .select('user_id, display_name')
+        .ilike('display_name', `%${newAdminEmail}%`)
         .single();
       
       if (profileError || !profile) {
@@ -227,6 +293,87 @@ const AdminManager = () => {
           <Button onClick={addExistingAdmin} disabled={loading} className="w-full">
             {loading ? "Adicionando..." : "Promover a Administrador"}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserPlus className="w-5 h-5" />
+            Criar Novo Administrador
+          </CardTitle>
+          <CardDescription>
+            Criar um novo usuário com permissões de administrador
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!showCreateForm ? (
+            <Button 
+              onClick={() => setShowCreateForm(true)} 
+              variant="outline" 
+              className="w-full"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Criar Novo Administrador
+            </Button>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="new-admin-name">Nome Completo</Label>
+                <Input
+                  id="new-admin-name"
+                  type="text"
+                  value={newAdminName}
+                  onChange={(e) => setNewAdminName(e.target.value)}
+                  placeholder="Nome do administrador"
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-admin-email">Email</Label>
+                <Input
+                  id="new-admin-email"
+                  type="email"
+                  value={newAdminEmail}
+                  onChange={(e) => setNewAdminEmail(e.target.value)}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-admin-password">Senha</Label>
+                <Input
+                  id="new-admin-password"
+                  type="password"
+                  value={newAdminPassword}
+                  onChange={(e) => setNewAdminPassword(e.target.value)}
+                  placeholder="Senha segura"
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Mínimo 6 caracteres
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={createNewAdmin} 
+                  disabled={loading} 
+                  className="flex-1"
+                >
+                  {loading ? "Criando..." : "Criar Administrador"}
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setNewAdminEmail("");
+                    setNewAdminPassword("");
+                    setNewAdminName("");
+                  }} 
+                  variant="outline"
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
