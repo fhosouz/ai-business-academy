@@ -104,7 +104,8 @@ const VideoUpload = ({ onVideoUploaded, courseId }: VideoUploadProps) => {
 
       if (!lessonsContentBucket) {
         console.error('❌ Bucket "Lessons-content" not found!');
-        throw new Error('Bucket de armazenamento não encontrado');
+        console.log('🔍 Available bucket names:', buckets?.map(b => b.name));
+        throw new Error(`Bucket "Lessons-content" não encontrado. Buckets disponíveis: ${buckets?.map(b => b.name).join(', ') || 'nenhum'}`);
       }
 
       // Attempt upload with detailed logging
