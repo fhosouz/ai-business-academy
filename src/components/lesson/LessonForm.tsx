@@ -17,16 +17,18 @@ interface LessonFormProps {
   categories: Category[];
   onLessonCreated: () => void;
   lessonsCount: number;
+  editingLesson?: any;
+  onEditComplete?: () => void;
 }
 
-const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount }: LessonFormProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount, editingLesson, onEditComplete }: LessonFormProps) => {
+  const [isOpen, setIsOpen] = useState(!!editingLesson);
   const [newLesson, setNewLesson] = useState({
-    title: "",
-    description: "",
-    video_url: "",
-    is_free: false,
-    category_id: 1,
+    title: editingLesson?.title || "",
+    description: editingLesson?.description || "",
+    video_url: editingLesson?.video_url || "",
+    is_free: editingLesson?.is_free || false,
+    category_id: editingLesson?.category_id || 1,
   });
   const { toast } = useToast();
 
@@ -38,7 +40,7 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount }: Les
     }));
   };
 
-  const createLesson = async () => {
+  const createOrUpdateLesson = async () => {
     if (!newLesson.title.trim()) {
       toast({
         title: "Erro",
@@ -49,19 +51,50 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount }: Les
     }
 
     try {
-      const { error } = await supabase
-        .from('lessons')
-        .insert({
-          course_id: courseId,
-          title: newLesson.title,
-          description: newLesson.description,
-          video_url: newLesson.video_url,
-          is_free: newLesson.is_free,
-          category_id: newLesson.category_id,
-          order_index: lessonsCount,
-        });
+      if (editingLesson) {
+        // Update existing lesson
+        const { error } = await supabase
+          .from('lessons')
+          .update({
+            title: newLesson.title,
+            description: newLesson.description,
+            video_url: newLesson.video_url,
+            is_free: newLesson.is_free,
+            category_id: newLesson.category_id,
+          })
+          .eq('id', editingLesson.id);
 
-      if (error) throw error;
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso!",
+          description: "Aula atualizada com sucesso.",
+        });
+        
+        if (onEditComplete) {
+          onEditComplete();
+        }
+      } else {
+        // Create new lesson
+        const { error } = await supabase
+          .from('lessons')
+          .insert({
+            course_id: courseId,
+            title: newLesson.title,
+            description: newLesson.description,
+            video_url: newLesson.video_url,
+            is_free: newLesson.is_free,
+            category_id: newLesson.category_id,
+            order_index: lessonsCount,
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso!",
+          description: "Aula criada com sucesso.",
+        });
+      }
 
       setNewLesson({
         title: "",
@@ -72,16 +105,11 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount }: Les
       });
       setIsOpen(false);
       onLessonCreated();
-
-      toast({
-        title: "Sucesso!",
-        description: "Aula criada com sucesso.",
-      });
     } catch (error) {
-      console.error('Error creating lesson:', error);
+      console.error('Error creating/updating lesson:', error);
       toast({
         title: "Erro",
-        description: "Erro ao criar aula.",
+        description: editingLesson ? "Erro ao atualizar aula." : "Erro ao criar aula.",
         variant: "destructive",
       });
     }
@@ -89,26 +117,28 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount }: Les
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Adicionar Nova Aula</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button
-            onClick={() => setIsOpen(true)}
-            className="w-full"
-            disabled={isOpen}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Adicionar Nova Aula
-          </Button>
-        </CardContent>
-      </Card>
+      {!editingLesson && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Adicionar Nova Aula</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={() => setIsOpen(true)}
+              className="w-full"
+              disabled={isOpen}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Adicionar Nova Aula
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {isOpen && (
         <Card>
           <CardHeader>
-            <CardTitle>Nova Aula</CardTitle>
+            <CardTitle>{editingLesson ? 'Editar Aula' : 'Nova Aula'}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <VideoUpload onVideoUploaded={handleVideoUploaded} />
@@ -163,12 +193,17 @@ const LessonForm = ({ courseId, categories, onLessonCreated, lessonsCount }: Les
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={createLesson} className="flex-1">
-                Criar Aula
+              <Button onClick={createOrUpdateLesson} className="flex-1">
+                {editingLesson ? 'Salvar Alterações' : 'Criar Aula'}
               </Button>
               <Button
                 variant="outline"
-                onClick={() => setIsOpen(false)}
+                onClick={() => {
+                  setIsOpen(false);
+                  if (onEditComplete) {
+                    onEditComplete();
+                  }
+                }}
                 className="flex-1"
               >
                 Cancelar

@@ -17,6 +17,7 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isAddingLesson, setIsAddingLesson] = useState(false);
+  const [editingLesson, setEditingLesson] = useState<any>(null);
   const { toast } = useToast();
   const { isAdmin } = useUserRole();
 
@@ -72,6 +73,15 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
     fetchLessons();
   };
 
+  const handleLessonEdit = (lesson: any) => {
+    setEditingLesson(lesson);
+  };
+
+  const handleEditComplete = () => {
+    setEditingLesson(null);
+    fetchLessons();
+  };
+
   if (!isAdmin) {
     return (
       <Card>
@@ -105,11 +115,14 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
         categories={categories}
         onLessonCreated={handleLessonCreated}
         lessonsCount={lessons.length}
+        editingLesson={editingLesson}
+        onEditComplete={handleEditComplete}
       />
 
       <LessonList
         lessons={lessons}
         onLessonDeleted={handleLessonDeleted}
+        onLessonEdit={handleLessonEdit}
         isAddingLesson={isAddingLesson}
       />
     </div>

@@ -8,20 +8,50 @@ import { Lesson } from "./types";
 interface LessonListProps {
   lessons: Lesson[];
   onLessonDeleted: () => void;
+  onLessonEdit: (lesson: Lesson) => void;
   isAddingLesson: boolean;
 }
 
-const LessonList = ({ lessons, onLessonDeleted, isAddingLesson }: LessonListProps) => {
+const LessonList = ({ lessons, onLessonDeleted, onLessonEdit, isAddingLesson }: LessonListProps) => {
   const { toast } = useToast();
 
   const deleteLesson = async (lessonId: string) => {
     try {
+      // Get lesson data to extract video file path
+      const { data: lesson } = await supabase
+        .from('lessons')
+        .select('video_url')
+        .eq('id', lessonId)
+        .single();
+
+      // Delete the lesson from database
       const { error } = await supabase
         .from('lessons')
         .delete()
         .eq('id', lessonId);
 
       if (error) throw error;
+
+      // If lesson had a video, try to delete it from storage
+      if (lesson?.video_url) {
+        try {
+          // Extract file path from URL
+          const url = new URL(lesson.video_url);
+          const pathSegments = url.pathname.split('/');
+          const bucketIndex = pathSegments.findIndex(segment => segment === 'course-videos');
+          
+          if (bucketIndex !== -1 && bucketIndex < pathSegments.length - 1) {
+            const filePath = pathSegments.slice(bucketIndex + 1).join('/');
+            
+            await supabase.storage
+              .from('course-videos')
+              .remove([filePath]);
+          }
+        } catch (storageError) {
+          console.warn('Error deleting video file:', storageError);
+          // Don't fail the entire operation if storage deletion fails
+        }
+      }
       
       onLessonDeleted();
       toast({
@@ -47,6 +77,7 @@ const LessonList = ({ lessons, onLessonDeleted, isAddingLesson }: LessonListProp
           key={lesson.id}
           lesson={lesson}
           index={index}
+          onEdit={onLessonEdit}
           onDelete={deleteLesson}
         />
       ))}
