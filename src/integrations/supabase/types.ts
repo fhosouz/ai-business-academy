@@ -38,6 +38,7 @@ export type Database = {
           category_id: number
           created_at: string
           description: string | null
+          display_order: number | null
           id: number
           image_url: string | null
           instructor: string | null
@@ -50,6 +51,7 @@ export type Database = {
           category_id: number
           created_at?: string
           description?: string | null
+          display_order?: number | null
           id?: number
           image_url?: string | null
           instructor?: string | null
@@ -62,6 +64,7 @@ export type Database = {
           category_id?: number
           created_at?: string
           description?: string | null
+          display_order?: number | null
           id?: number
           image_url?: string | null
           instructor?: string | null

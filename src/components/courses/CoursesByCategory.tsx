@@ -40,11 +40,11 @@ const CoursesByCategory = ({ onCourseSelect }: CoursesByCategoryProps) => {
 
   const fetchCoursesByCategory = async () => {
     try {
-      // Buscar categorias
+      // Buscar categorias ordenadas por ID
       const { data: categories, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
-        .order('name');
+        .order('id');
 
       if (categoriesError) throw categoriesError;
 
@@ -57,7 +57,8 @@ const CoursesByCategory = ({ onCourseSelect }: CoursesByCategoryProps) => {
           .select('*')
           .eq('category_id', category.id)
           .eq('status', 'published')
-          .order('created_at', { ascending: false });
+          .order('display_order')
+          .order('created_at');
 
         if (coursesError) throw coursesError;
 

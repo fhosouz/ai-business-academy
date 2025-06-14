@@ -110,6 +110,7 @@ const Index = () => {
               <CategoryLessons
                 categoryId={selectedCategory.id}
                 categoryName={selectedCategory.name}
+                courseId={selectedCategory.courseId}
                 onBack={handleBackToCategories}
                 onLessonSelect={handleLessonSelect}
               />

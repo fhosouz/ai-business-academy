@@ -4,7 +4,7 @@ import { Lesson } from "@/components/lesson/types";
 export const useIndexNavigation = (courses: any[]) => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [coursesView, setCoursesView] = useState<'categories' | 'lessons' | 'player'>('categories');
-  const [selectedCategory, setSelectedCategory] = useState<{ id: number; name: string } | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<{ id: number; name: string; courseId?: number } | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [adminView, setAdminView] = useState<'courses' | 'lessons' | 'admins'>('courses');
 
@@ -19,11 +19,16 @@ export const useIndexNavigation = (courses: any[]) => {
   };
 
   const handleCourseSelect = (courseId: number, courseName: string) => {
-    // Buscar a categoria do curso para navegação
+    // Buscar a categoria do curso para navegação específica do curso
     const course = courses.find(c => c.id === courseId);
     if (course) {
       setActiveTab('courses');
-      handleCategorySelect(course.category_id, course.categories?.name || 'Curso');
+      setSelectedCategory({ 
+        id: course.category_id, 
+        name: course.categories?.name || courseName, 
+        courseId: courseId 
+      });
+      setCoursesView('lessons');
     }
   };
 

@@ -21,11 +21,12 @@ interface Lesson {
 interface CategoryLessonsProps {
   categoryId: number;
   categoryName: string;
+  courseId?: number;
   onBack: () => void;
   onLessonSelect: (lesson: Lesson) => void;
 }
 
-const CategoryLessons = ({ categoryId, categoryName, onBack, onLessonSelect }: CategoryLessonsProps) => {
+const CategoryLessons = ({ categoryId, categoryName, courseId, onBack, onLessonSelect }: CategoryLessonsProps) => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [lessonsProgress, setLessonsProgress] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,7 +40,7 @@ const CategoryLessons = ({ categoryId, categoryName, onBack, onLessonSelect }: C
       fetchLessonsProgress();
       fetchUserProfile();
     }
-  }, [categoryId, user]);
+  }, [categoryId, courseId, user]);
 
   // Buscar progresso sempre que voltar para a página
   useEffect(() => {
@@ -68,11 +69,19 @@ const CategoryLessons = ({ categoryId, categoryName, onBack, onLessonSelect }: C
 
   const fetchLessons = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('lessons')
-        .select('*')
-        .eq('category_id', categoryId)
-        .order('order_index');
+        .select('*');
+
+      // Se courseId foi fornecido, buscar aulas do curso específico
+      if (courseId) {
+        query = query.eq('course_id', courseId);
+      } else {
+        // Caso contrário, buscar por categoria
+        query = query.eq('category_id', categoryId);
+      }
+
+      const { data, error } = await query.order('order_index');
 
       if (error) throw error;
       setLessons(data || []);
@@ -80,7 +89,7 @@ const CategoryLessons = ({ categoryId, categoryName, onBack, onLessonSelect }: C
       console.error('Error fetching lessons:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar aulas da categoria.",
+        description: `Erro ao carregar aulas ${courseId ? 'do curso' : 'da categoria'}.`,
         variant: "destructive",
       });
     } finally {
