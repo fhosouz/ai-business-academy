@@ -5,18 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Users, Calendar, Clock, Home, Search, User, MessageSquare, Check, Settings } from "lucide-react";
+import { BookOpen, Users, Calendar, Clock, Home, Search, User, MessageSquare, Check, Settings, Shield } from "lucide-react";
 import Header from "@/components/Header";
 import CourseCard from "@/components/CourseCard";
 import ProgressStats from "@/components/ProgressStats";
 import TrendsSection from "@/components/TrendsSection";
 import ChatSupport from "@/components/ChatSupport";
 import LessonManager from "@/components/LessonManager";
+import AdminManager from "@/components/AdminManager";
 import CategoryGrid from "@/components/CategoryGrid";
 import CategoryLessons from "@/components/CategoryLessons";
 import LessonPlayer from "@/components/LessonPlayer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -24,7 +26,9 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<{ id: number; name: string } | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
+  const [adminView, setAdminView] = useState<'lessons' | 'admins'>('lessons');
   const { toast } = useToast();
+  const { isAdmin, loading: roleLoading } = useUserRole();
 
   useEffect(() => {
     fetchCategories();
@@ -143,10 +147,12 @@ const Index = () => {
               <Calendar className="w-4 h-4" />
               Tendências
             </TabsTrigger>
-            <TabsTrigger value="admin" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Admin
-            </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="admin" className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Admin
+              </TabsTrigger>
+            )}
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="w-4 h-4" />
               Perfil
@@ -241,14 +247,52 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="admin" className="space-y-8">
-            <div className="flex justify-between items-center">
-              <h1 className="text-3xl font-bold">Administração de Conteúdo</h1>
-            </div>
-            
-            <LessonManager 
-              courseId={1} 
-              courseName="IA Generativa para Negócios" 
-            />
+            {roleLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p>Verificando permissões...</p>
+              </div>
+            ) : !isAdmin ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Shield className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mb-2">Acesso Negado</h3>
+                  <p className="text-muted-foreground">
+                    Você não tem permissão para acessar esta área. Entre em contato com um administrador.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <div className="flex justify-between items-center">
+                  <h1 className="text-3xl font-bold">Painel de Administração</h1>
+                </div>
+                
+                <Tabs value={adminView} onValueChange={(value) => setAdminView(value as 'lessons' | 'admins')} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsTrigger value="lessons" className="flex items-center gap-2">
+                      <BookOpen className="w-4 h-4" />
+                      Gerenciar Aulas
+                    </TabsTrigger>
+                    <TabsTrigger value="admins" className="flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Gerenciar Administradores
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="lessons">
+                    <LessonManager 
+                      courseId={1} 
+                      courseName="IA Generativa para Negócios" 
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="admins">
+                    <AdminManager />
+                  </TabsContent>
+                </Tabs>
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="profile">
