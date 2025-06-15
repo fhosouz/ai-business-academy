@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Bell, Search, User, LogOut } from "lucide-react";
+import { Search, User, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import SearchComponent from "./SearchComponent";
+import NotificationBell from "./NotificationBell";
 
 interface HeaderProps {
   onResultSelect?: (result: any) => void;
@@ -74,18 +75,13 @@ const Header = ({ onResultSelect }: HeaderProps) => {
           </div>
 
           {/* Right side */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             {/* Notifications */}
-            <Button variant="ghost" size="sm" className="relative">
-              <Bell className="w-5 h-5" />
-              <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center bg-red-500 text-white text-xs">
-                3
-              </Badge>
-            </Button>
+            <NotificationBell />
 
             {/* User Profile */}
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:block text-right">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="hidden md:block text-right">
                 <p className="text-sm font-medium">
                   {user?.user_metadata?.full_name || user?.email || 'Usuário'}
                 </p>
@@ -102,7 +98,7 @@ const Header = ({ onResultSelect }: HeaderProps) => {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuContent className="w-56" align="end" forceMount sideOffset={5}>
                   <DropdownMenuItem className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">

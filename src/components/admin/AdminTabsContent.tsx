@@ -1,16 +1,17 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Users, Shield, BarChart3 } from "lucide-react";
+import { BookOpen, Users, Shield, BarChart3, Bell } from "lucide-react";
 import CourseManager from "@/components/CourseManager";
 import LessonManager from "@/components/LessonManager";
 import AdminManager from "@/components/AdminManager";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
+import NotificationManager from "@/components/admin/NotificationManager";
 
 interface AdminTabsContentProps {
   isAdmin: boolean;
   roleLoading: boolean;
-  adminView: 'courses' | 'lessons' | 'admins' | 'analytics';
-  setAdminView: (view: 'courses' | 'lessons' | 'admins' | 'analytics') => void;
+  adminView: 'courses' | 'lessons' | 'admins' | 'analytics' | 'notifications';
+  setAdminView: (view: 'courses' | 'lessons' | 'admins' | 'analytics' | 'notifications') => void;
 }
 
 const AdminTabsContent = ({ isAdmin, roleLoading, adminView, setAdminView }: AdminTabsContentProps) => {
@@ -43,23 +44,27 @@ const AdminTabsContent = ({ isAdmin, roleLoading, adminView, setAdminView }: Adm
         <h1 className="text-3xl font-bold">Painel de Administração</h1>
       </div>
       
-      <Tabs value={adminView} onValueChange={(value) => setAdminView(value as 'courses' | 'lessons' | 'admins' | 'analytics')} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-6">
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
+      <Tabs value={adminView} onValueChange={(value) => setAdminView(value as 'courses' | 'lessons' | 'admins' | 'analytics' | 'notifications')} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 mb-6 h-auto">
+          <TabsTrigger value="analytics" className="flex items-center gap-2 text-xs md:text-sm">
             <BarChart3 className="w-4 h-4" />
-            Analytics
+            <span className="hidden sm:inline">Analytics</span>
           </TabsTrigger>
-          <TabsTrigger value="courses" className="flex items-center gap-2">
+          <TabsTrigger value="courses" className="flex items-center gap-2 text-xs md:text-sm">
             <BookOpen className="w-4 h-4" />
-            Cursos
+            <span className="hidden sm:inline">Cursos</span>
           </TabsTrigger>
-          <TabsTrigger value="lessons" className="flex items-center gap-2">
+          <TabsTrigger value="lessons" className="flex items-center gap-2 text-xs md:text-sm">
             <BookOpen className="w-4 h-4" />
-            Aulas
+            <span className="hidden sm:inline">Aulas</span>
           </TabsTrigger>
-          <TabsTrigger value="admins" className="flex items-center gap-2">
+          <TabsTrigger value="notifications" className="flex items-center gap-2 text-xs md:text-sm">
+            <Bell className="w-4 h-4" />
+            <span className="hidden sm:inline">Notificações</span>
+          </TabsTrigger>
+          <TabsTrigger value="admins" className="flex items-center gap-2 text-xs md:text-sm">
             <Users className="w-4 h-4" />
-            Admins
+            <span className="hidden sm:inline">Admins</span>
           </TabsTrigger>
         </TabsList>
 
@@ -76,6 +81,10 @@ const AdminTabsContent = ({ isAdmin, roleLoading, adminView, setAdminView }: Adm
             courseId={1} 
             courseName="IA Generativa para Negócios" 
           />
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <NotificationManager />
         </TabsContent>
 
         <TabsContent value="admins">

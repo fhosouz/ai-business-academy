@@ -54,7 +54,7 @@ const Login = () => {
             <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mb-4">
               <BookOpen className="w-8 h-8 text-white" />
             </div>
-            <CardTitle className="text-2xl">Bem-vindo à Plataforma IA</CardTitle>
+            <CardTitle className="text-2xl">Bem-vindo à AutomatizeAI Academy</CardTitle>
             <CardDescription>
               Faça login para acessar cursos de Inteligência Artificial
             </CardDescription>
