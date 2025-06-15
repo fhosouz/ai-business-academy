@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Lock } from "lucide-react";
+import { useUserPlan } from "@/hooks/useUserPlan";
 
 interface Course {
   id: number;
@@ -20,29 +21,51 @@ interface CoursesGridProps {
 }
 
 const CoursesGrid = ({ courses, onCourseSelect }: CoursesGridProps) => {
+  const { canAccessPremium } = useUserPlan();
+  
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">Explore por Categoria</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {courses.map((course, index) => (
-          <Card 
-            key={course.id} 
-            className="hover:scale-105 transition-transform cursor-pointer overflow-hidden"
-            onClick={() => onCourseSelect(course.id, course.title)}
-          >
-            <div className="relative h-32">
-              <img 
-                src={course.image_url || `https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=200&fit=crop`}
-                alt={course.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = `https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=200&fit=crop`;
-                }}
-              />
-              <Badge className={`absolute top-2 right-2 ${course.is_premium ? 'bg-yellow-500 text-white' : 'bg-green-500 text-white'}`}>
-                {course.is_premium ? 'Premium' : 'Free'}
-              </Badge>
-            </div>
+        {courses.map((course, index) => {
+          const isPremium = course.is_premium;
+          const canAccess = !isPremium || canAccessPremium;
+          
+          return (
+            <Card 
+              key={course.id} 
+              className={`hover:scale-105 transition-transform cursor-pointer overflow-hidden ${
+                !canAccess ? 'opacity-75 relative' : ''
+              }`}
+              onClick={() => onCourseSelect(course.id, course.title)}
+            >
+              {!canAccess && (
+                <div className="absolute inset-0 bg-black/10 z-10 flex items-center justify-center">
+                  <Lock className="w-8 h-8 text-gray-600" />
+                </div>
+              )}
+              
+              <div className="relative h-32">
+                <img 
+                  src={course.image_url || `https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=200&fit=crop`}
+                  alt={course.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = `https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=200&fit=crop`;
+                  }}
+                />
+                <Badge className={`absolute top-2 right-2 ${
+                  isPremium ? 'bg-yellow-500 text-white' : 'bg-green-500 text-white'
+                }`}>
+                  {isPremium ? 'Premium' : 'Free'}
+                </Badge>
+                {!canAccess && (
+                  <Badge className="absolute top-2 left-2 bg-gray-600 text-white">
+                    <Lock className="w-3 h-3 mr-1" />
+                    Bloqueado
+                  </Badge>
+                )}
+              </div>
             <CardContent className="p-4">
               <h3 className="font-semibold text-lg mb-2 line-clamp-2">{course.title}</h3>
               <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{course.description}</p>
@@ -53,8 +76,9 @@ const CoursesGrid = ({ courses, onCourseSelect }: CoursesGridProps) => {
                 )}
               </div>
             </CardContent>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
       
       {courses.length === 0 && (

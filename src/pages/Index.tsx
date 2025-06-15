@@ -1,7 +1,9 @@
 
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, Calendar, Home, MessageSquare, Settings, Trophy, User } from "lucide-react";
 import Header from "@/components/Header";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import ProgressStats from "@/components/ProgressStats";
 import TrendsSection from "@/components/TrendsSection";
 import ChatSupport from "@/components/ChatSupport";
@@ -15,8 +17,10 @@ import UserProfile from "@/components/UserProfile";
 import WelcomeSection from "@/components/dashboard/WelcomeSection";
 import CoursesGrid from "@/components/dashboard/CoursesGrid";
 import AdminTabsContent from "@/components/admin/AdminTabsContent";
+import PremiumUpgradeModal from "@/components/PremiumUpgradeModal";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserProgress } from "@/hooks/useUserProgress";
+import { useUserPlan } from "@/hooks/useUserPlan";
 import { useIndexData } from "@/hooks/useIndexData";
 import { useIndexNavigation } from "@/hooks/useIndexNavigation";
 import { useAnalytics } from "@/hooks/useAnalytics";
@@ -24,8 +28,12 @@ import { useAnalytics } from "@/hooks/useAnalytics";
 const Index = () => {
   const { isAdmin, loading: roleLoading } = useUserRole();
   const { userProgress } = useUserProgress();
+  const { plan, canAccessPremium } = useUserPlan();
   const { categories, courses } = useIndexData();
-  const { trackEvent } = useAnalytics(); // Add analytics tracking
+  const { trackEvent } = useAnalytics();
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<string>("");
+  
   const {
     activeTab,
     coursesView,
@@ -43,19 +51,38 @@ const Index = () => {
     handleTabChange
   } = useIndexNavigation(courses);
 
-  // Enhanced event handlers with analytics tracking
+  // Enhanced event handlers with analytics tracking and premium restriction
   const handleCourseSelectWithTracking = (courseId: number, courseName: string) => {
+    const course = courses.find(c => c.id === courseId);
+    
+    // Check if course is premium and user has free plan
+    if (course?.is_premium && !canAccessPremium) {
+      setSelectedCourse(courseName);
+      setShowPremiumModal(true);
+      trackEvent('premium_course_blocked', { course_id: courseId, course_name: courseName });
+      return;
+    }
+    
     trackEvent('course_view', { course_id: courseId, course_name: courseName });
     handleCourseSelect(courseId, courseName);
   };
 
   const handleLessonSelectWithTracking = (lesson: any) => {
+    // Check if lesson is premium and user has free plan
+    if (!lesson.is_free && !canAccessPremium) {
+      setSelectedCourse(lesson.title);
+      setShowPremiumModal(true);
+      trackEvent('premium_lesson_blocked', { lesson_id: lesson.id, lesson_name: lesson.title });
+      return;
+    }
+    
     trackEvent('lesson_start', { lesson_id: lesson.id, lesson_name: lesson.title });
     handleLessonSelect(lesson);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <Header onResultSelect={handleSearchResult} />
       
       <div className="container mx-auto px-4 py-8">
@@ -163,7 +190,14 @@ const Index = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+      
+      <PremiumUpgradeModal 
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        courseName={selectedCourse}
+      />
+      </div>
+    </ProtectedRoute>
   );
 };
 
