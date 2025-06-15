@@ -153,6 +153,10 @@ const Index = () => {
                 courseId={selectedCategory.courseId}
                 onBack={handleBackToCategories}
                 onLessonSelect={handleLessonSelectWithTracking}
+                onPremiumRequired={(lesson) => {
+                  setSelectedCourse(lesson.title);
+                  setShowPremiumModal(true);
+                }}
               />
             )}
 

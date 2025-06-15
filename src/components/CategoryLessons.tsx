@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Play, Clock, CheckCircle, BookOpen } from "lucide-react";
+import { ArrowLeft, Play, Clock, CheckCircle, BookOpen, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserPlan } from "@/hooks/useUserPlan";
 import BadgeGenerator from "@/components/BadgeGenerator";
 
 interface Lesson {
@@ -24,15 +25,17 @@ interface CategoryLessonsProps {
   courseId?: number;
   onBack: () => void;
   onLessonSelect: (lesson: Lesson) => void;
+  onPremiumRequired?: (lesson: Lesson) => void;
 }
 
-const CategoryLessons = ({ categoryId, categoryName, courseId, onBack, onLessonSelect }: CategoryLessonsProps) => {
+const CategoryLessons = ({ categoryId, categoryName, courseId, onBack, onLessonSelect, onPremiumRequired }: CategoryLessonsProps) => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [lessonsProgress, setLessonsProgress] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<any>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { canAccessPremium } = useUserPlan();
 
   useEffect(() => {
     fetchLessons();
@@ -169,6 +172,24 @@ const CategoryLessons = ({ categoryId, categoryName, courseId, onBack, onLessonS
     return skillsMap[categoryName] || ['Inteligência Artificial', 'Tecnologia', 'Inovação'];
   };
 
+  const handleLessonClick = (lesson: Lesson) => {
+    // Check if lesson is premium and user has free plan
+    if (!lesson.is_free && !canAccessPremium) {
+      if (onPremiumRequired) {
+        onPremiumRequired(lesson);
+      } else {
+        toast({
+          title: "Conteúdo Premium",
+          description: "Esta aula está disponível apenas para usuários premium.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+    
+    onLessonSelect(lesson);
+  };
+
   if (loading) {
     return <div className="text-center">Carregando aulas...</div>;
   }
@@ -207,13 +228,22 @@ const CategoryLessons = ({ categoryId, categoryName, courseId, onBack, onLessonS
           {lessons.map((lesson, index) => {
             const progress = getLessonProgress(lesson.id);
             const status = progress?.status || 'not_started';
+            const isPremium = !lesson.is_free;
+            const canAccess = lesson.is_free || canAccessPremium;
             
             return (
               <Card 
                 key={lesson.id} 
-                className="hover:shadow-lg transition-shadow cursor-pointer overflow-hidden"
-                onClick={() => onLessonSelect(lesson)}
+                className={`hover:shadow-lg transition-shadow cursor-pointer overflow-hidden ${
+                  !canAccess ? 'opacity-75 relative' : ''
+                }`}
+                onClick={() => handleLessonClick(lesson)}
               >
+                {!canAccess && (
+                  <div className="absolute inset-0 bg-black/10 z-10 flex items-center justify-center">
+                    <Lock className="w-8 h-8 text-gray-600" />
+                  </div>
+                )}
                 {/* Lesson Image */}
                 <div className="relative h-40 bg-gradient-to-br from-blue-100 to-purple-100">
                   <img 
@@ -253,7 +283,17 @@ const CategoryLessons = ({ categoryId, categoryName, courseId, onBack, onLessonS
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Badge variant="outline">Aula {index + 1}</Badge>
-                    {lesson.is_free ? <Badge className="bg-green-500 text-white">Free</Badge> : <Badge className="bg-yellow-500 text-white">Premium</Badge>}
+                    {lesson.is_free ? (
+                      <Badge className="bg-green-500 text-white">Free</Badge>
+                    ) : (
+                      <Badge className="bg-yellow-500 text-white">Premium</Badge>
+                    )}
+                    {!canAccess && (
+                      <Badge className="bg-gray-600 text-white">
+                        <Lock className="w-3 h-3 mr-1" />
+                        Bloqueado
+                      </Badge>
+                    )}
                   </div>
                   
                   <h3 className="font-semibold text-lg mb-2 line-clamp-2">{lesson.title}</h3>
