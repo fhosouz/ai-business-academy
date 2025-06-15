@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Activity, Users, Star, TrendingUp, Eye, Award } from "lucide-react";
+import { Activity, Users, Star, TrendingUp, Eye, Award, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -19,6 +21,10 @@ const AdminAnalytics = () => {
     topRatedLessons: []
   });
   const [loading, setLoading] = useState(true);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [userDetails, setUserDetails] = useState<any[]>([]);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -165,6 +171,82 @@ const AdminAnalytics = () => {
     }
   };
 
+  const fetchUserDetails = async (type: string, planType?: string) => {
+    setLoadingDetails(true);
+    try {
+      let query = supabase
+        .from('profiles')
+        .select(`
+          display_name,
+          avatar_url,
+          created_at,
+          user_roles!inner(plan_type, role)
+        `);
+
+      switch (type) {
+        case 'total':
+          setModalTitle('Todos os Usuários');
+          break;
+        case 'premium':
+          setModalTitle('Usuários Premium');
+          query = query.in('user_roles.plan_type', ['premium', 'enterprise']);
+          break;
+        case 'plan':
+          setModalTitle(`Usuários ${planType === 'free' ? 'Free' : planType === 'premium' ? 'Premium' : 'Enterprise'}`);
+          if (planType && ['free', 'premium', 'enterprise'].includes(planType)) {
+            query = query.eq('user_roles.plan_type', planType as 'free' | 'premium' | 'enterprise');
+          }
+          break;
+        case 'page':
+          setModalTitle(`Usuários que Acessaram ${planType}`);
+          const { data: pageUsers } = await supabase
+            .from('page_analytics')
+            .select('user_id')
+            .eq('page_path', planType === 'Dashboard' ? '/' : 
+                 planType === 'Cursos' ? '/courses' : 
+                 planType === 'Perfil' ? '/profile' : 
+                 planType === 'Admin' ? '/admin' : planType)
+            .not('user_id', 'is', null);
+          
+          const userIds = [...new Set(pageUsers?.map(p => p.user_id))];
+          query = query.in('user_id', userIds);
+          break;
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setUserDetails(data || []);
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar detalhes dos usuários.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const handleCardClick = (type: string, planType?: string) => {
+    fetchUserDetails(type, planType);
+    setShowDetailsModal(true);
+  };
+
+  const handlePieClick = (data: any) => {
+    const planType = data.name === 'Free' ? 'free' : 
+                     data.name === 'Premium' ? 'premium' : 'enterprise';
+    fetchUserDetails('plan', planType);
+    setShowDetailsModal(true);
+  };
+
+  const handleBarClick = (data: any) => {
+    fetchUserDetails('page', data.page);
+    setShowDetailsModal(true);
+  };
+
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
   if (loading) {
@@ -197,7 +279,7 @@ const AdminAnalytics = () => {
 
       {/* Cards de métricas principais */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleCardClick('total')}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -209,7 +291,7 @@ const AdminAnalytics = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleCardClick('premium')}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -263,7 +345,7 @@ const AdminAnalytics = () => {
                 <XAxis dataKey="page" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="views" fill="#8884d8" />
+                <Bar dataKey="views" fill="#8884d8" onClick={handleBarClick} className="cursor-pointer" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -289,6 +371,8 @@ const AdminAnalytics = () => {
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
+                  onClick={handlePieClick}
+                  className="cursor-pointer"
                 >
                   {analytics.usersByPlan.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -352,6 +436,76 @@ const AdminAnalytics = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de Detalhes dos Usuários */}
+      <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{modalTitle}</DialogTitle>
+          </DialogHeader>
+          
+          {loadingDetails ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="mt-4">
+              {userDetails.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Plano</TableHead>
+                      <TableHead>Função</TableHead>
+                      <TableHead>Data de Cadastro</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {userDetails.map((user, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            {user.avatar_url ? (
+                              <img 
+                                src={user.avatar_url} 
+                                alt="Avatar" 
+                                className="w-8 h-8 rounded-full"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                <Users className="w-4 h-4 text-gray-500" />
+                              </div>
+                            )}
+                            <span>{user.display_name || 'Usuário sem nome'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={user.user_roles.plan_type === 'free' ? 'secondary' : 'default'}>
+                            {user.user_roles.plan_type === 'free' ? 'Free' : 
+                             user.user_roles.plan_type === 'premium' ? 'Premium' : 'Enterprise'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={user.user_roles.role === 'admin' ? 'destructive' : 'outline'}>
+                            {user.user_roles.role === 'admin' ? 'Admin' : 'Usuário'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nenhum usuário encontrado para esta categoria.
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
