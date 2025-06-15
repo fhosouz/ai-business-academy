@@ -51,6 +51,11 @@ const Index = () => {
     handleTabChange
   } = useIndexNavigation(courses);
 
+  // Get course data to check if it's free
+  const selectedCourseData = selectedCategory?.courseId 
+    ? courses.find((c) => c.id === selectedCategory.courseId)
+    : null;
+
   // Enhanced event handlers with analytics tracking and premium restriction
   const handleCourseSelectWithTracking = (courseId: number, courseName: string) => {
     const course = courses.find(c => c.id === courseId);
@@ -68,8 +73,11 @@ const Index = () => {
   };
 
   const handleLessonSelectWithTracking = (lesson: any) => {
+    const isCourseFree = selectedCourseData ? !selectedCourseData.is_premium : false;
+    const canAccess = isCourseFree || lesson.is_free || canAccessPremium;
+    
     // Check if lesson is premium and user has free plan
-    if (!lesson.is_free && !canAccessPremium) {
+    if (!canAccess) {
       setSelectedCourse(lesson.title);
       setShowPremiumModal(true);
       trackEvent('premium_lesson_blocked', { lesson_id: lesson.id, lesson_name: lesson.title });
@@ -157,6 +165,7 @@ const Index = () => {
                   setSelectedCourse(lesson.title);
                   setShowPremiumModal(true);
                 }}
+                isCourseFree={selectedCourseData ? !selectedCourseData.is_premium : false}
               />
             )}
 

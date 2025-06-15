@@ -26,9 +26,10 @@ interface CategoryLessonsProps {
   onBack: () => void;
   onLessonSelect: (lesson: Lesson) => void;
   onPremiumRequired?: (lesson: Lesson) => void;
+  isCourseFree?: boolean;
 }
 
-const CategoryLessons = ({ categoryId, categoryName, courseId, onBack, onLessonSelect, onPremiumRequired }: CategoryLessonsProps) => {
+const CategoryLessons = ({ categoryId, categoryName, courseId, onBack, onLessonSelect, onPremiumRequired, isCourseFree = false }: CategoryLessonsProps) => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [lessonsProgress, setLessonsProgress] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -173,8 +174,9 @@ const CategoryLessons = ({ categoryId, categoryName, courseId, onBack, onLessonS
   };
 
   const handleLessonClick = (lesson: Lesson) => {
+    const canAccess = isCourseFree || lesson.is_free || canAccessPremium;
     // Check if lesson is premium and user has free plan
-    if (!lesson.is_free && !canAccessPremium) {
+    if (!canAccess) {
       if (onPremiumRequired) {
         onPremiumRequired(lesson);
       } else {
@@ -229,7 +231,7 @@ const CategoryLessons = ({ categoryId, categoryName, courseId, onBack, onLessonS
             const progress = getLessonProgress(lesson.id);
             const status = progress?.status || 'not_started';
             const isPremium = !lesson.is_free;
-            const canAccess = lesson.is_free || canAccessPremium;
+            const canAccess = isCourseFree || lesson.is_free || canAccessPremium;
             
             return (
               <Card 
