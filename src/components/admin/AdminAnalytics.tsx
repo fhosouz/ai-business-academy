@@ -174,29 +174,38 @@ const AdminAnalytics = () => {
   const fetchUserDetails = async (type: string, planType?: string) => {
     setLoadingDetails(true);
     try {
-      let query = supabase
-        .from('profiles')
-        .select(`
-          display_name,
-          avatar_url,
-          created_at,
-          user_roles!inner(plan_type, role)
-        `);
-
+      let userIds: string[] = [];
+      
+      // Primeiro buscar user_ids baseado no tipo de filtro
       switch (type) {
         case 'total':
           setModalTitle('Todos os Usuários');
+          const { data: allUsers } = await supabase
+            .from('user_roles')
+            .select('user_id');
+          userIds = allUsers?.map(u => u.user_id) || [];
           break;
+          
         case 'premium':
           setModalTitle('Usuários Premium');
-          query = query.in('user_roles.plan_type', ['premium', 'enterprise']);
+          const { data: premiumUsers } = await supabase
+            .from('user_roles')
+            .select('user_id')
+            .in('plan_type', ['premium', 'enterprise']);
+          userIds = premiumUsers?.map(u => u.user_id) || [];
           break;
+          
         case 'plan':
           setModalTitle(`Usuários ${planType === 'free' ? 'Free' : planType === 'premium' ? 'Premium' : 'Enterprise'}`);
           if (planType && ['free', 'premium', 'enterprise'].includes(planType)) {
-            query = query.eq('user_roles.plan_type', planType as 'free' | 'premium' | 'enterprise');
+            const { data: planUsers } = await supabase
+              .from('user_roles')
+              .select('user_id')
+              .eq('plan_type', planType as 'free' | 'premium' | 'enterprise');
+            userIds = planUsers?.map(u => u.user_id) || [];
           }
           break;
+          
         case 'page':
           setModalTitle(`Usuários que Acessaram ${planType}`);
           const { data: pageUsers } = await supabase
@@ -208,16 +217,48 @@ const AdminAnalytics = () => {
                  planType === 'Admin' ? '/admin' : planType)
             .not('user_id', 'is', null);
           
-          const userIds = [...new Set(pageUsers?.map(p => p.user_id))];
-          query = query.in('user_id', userIds);
+          const pageUserIds = [...new Set(pageUsers?.map(p => p.user_id))];
+          // Filtrar apenas usuários que também estão na tabela user_roles
+          const { data: validUsers } = await supabase
+            .from('user_roles')
+            .select('user_id')
+            .in('user_id', pageUserIds);
+          userIds = validUsers?.map(u => u.user_id) || [];
           break;
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      if (userIds.length === 0) {
+        setUserDetails([]);
+        return;
+      }
 
-      if (error) throw error;
+      // Buscar profiles dos usuários
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('display_name, avatar_url, created_at, user_id')
+        .in('user_id', userIds)
+        .order('created_at', { ascending: false });
 
-      setUserDetails(data || []);
+      if (profilesError) throw profilesError;
+
+      // Buscar roles dos usuários
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, plan_type, role')
+        .in('user_id', userIds);
+
+      if (rolesError) throw rolesError;
+
+      // Combinar os dados
+      const combinedData = profiles?.map(profile => {
+        const userRole = roles?.find(role => role.user_id === profile.user_id);
+        return {
+          ...profile,
+          user_roles: userRole || { plan_type: 'free', role: 'user' }
+        };
+      }) || [];
+
+      setUserDetails(combinedData);
     } catch (error) {
       console.error('Error fetching user details:', error);
       toast({
