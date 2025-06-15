@@ -36,10 +36,10 @@ const Header = ({ onResultSelect }: HeaderProps) => {
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-2 md:px-4 py-3 md:py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center">
               <img 
                 src="/lovable-uploads/f8cf239b-cebe-4496-b0bd-b1cc1231627f.png" 
@@ -47,8 +47,8 @@ const Header = ({ onResultSelect }: HeaderProps) => {
                 className="w-10 h-10 object-contain"
               />
             </div>
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <div className="hidden sm:block">
+              <h1 className="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 AutomatizeAI Academy
               </h1>
               <p className="text-xs text-gray-500">Plataforma Educacional</p>
@@ -56,7 +56,7 @@ const Header = ({ onResultSelect }: HeaderProps) => {
           </div>
 
           {/* Search Bar - Hidden on mobile */}
-          <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
+          <div className="hidden lg:flex items-center flex-1 max-w-md mx-4 xl:mx-8">
             {onResultSelect ? (
               <SearchComponent onResultSelect={onResultSelect} />
             ) : (

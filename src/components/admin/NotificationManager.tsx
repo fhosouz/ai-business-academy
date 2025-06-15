@@ -42,7 +42,7 @@ const NotificationManager = () => {
     try {
       const { data, error } = await supabase
         .from('notifications')
-        .select('*')
+        .select('id, title, message, target_audience, expires_at, is_active, created_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -72,13 +72,16 @@ const NotificationManager = () => {
     }
 
     try {
+      const { data: currentUser } = await supabase.auth.getUser();
+      
       const { error } = await supabase
         .from('notifications')
         .insert({
           title: formData.title,
           message: formData.message,
           target_audience: formData.target_audience,
-          expires_at: formData.expires_at || null
+          expires_at: formData.expires_at || null,
+          created_by: currentUser.user?.id
         });
 
       if (error) throw error;

@@ -43,7 +43,7 @@ const NotificationBell = () => {
       // Buscar notificações ativas que o usuário pode ver
       const { data: activeNotifications, error: notificationsError } = await supabase
         .from('notifications')
-        .select('*')
+        .select('id, title, message, created_at, target_audience')
         .eq('is_active', true)
         .or(`target_audience.eq.all,target_audience.eq.${plan}`)
         .order('created_at', { ascending: false })

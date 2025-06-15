@@ -93,38 +93,38 @@ const Index = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <Header onResultSelect={handleSearchResult} />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-2 md:px-4 py-4 md:py-8">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className={`grid w-full mb-8 ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'}`}>
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+          <TabsList className={`grid w-full mb-6 md:mb-8 text-xs md:text-sm h-auto overflow-x-auto ${isAdmin ? 'grid-cols-4 md:grid-cols-7' : 'grid-cols-3 md:grid-cols-6'}`}>
+            <TabsTrigger value="dashboard" className="flex items-center gap-1 md:gap-2 px-2 md:px-3">
               <Home className="w-4 h-4" />
-              Dashboard
+              <span className="hidden sm:inline">Dashboard</span>
             </TabsTrigger>
-            <TabsTrigger value="courses" className="flex items-center gap-2">
+            <TabsTrigger value="courses" className="flex items-center gap-1 md:gap-2 px-2 md:px-3">
               <BookOpen className="w-4 h-4" />
-              Cursos
+              <span className="hidden sm:inline">Cursos</span>
             </TabsTrigger>
-            <TabsTrigger value="trends" className="flex items-center gap-2">
+            <TabsTrigger value="trends" className="flex items-center gap-1 md:gap-2 px-2 md:px-3">
               <Calendar className="w-4 h-4" />
-              Tendências
+              <span className="hidden sm:inline">Tendências</span>
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="admin" className="flex items-center gap-2">
+              <TabsTrigger value="admin" className="flex items-center gap-1 md:gap-2 px-2 md:px-3">
                 <Settings className="w-4 h-4" />
-                Admin
+                <span className="hidden md:inline">Admin</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="badges" className="flex items-center gap-2">
+            <TabsTrigger value="badges" className="flex items-center gap-1 md:gap-2 px-2 md:px-3">
               <Trophy className="w-4 h-4" />
-              Badges
+              <span className="hidden sm:inline">Badges</span>
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-2">
+            <TabsTrigger value="profile" className="flex items-center gap-1 md:gap-2 px-2 md:px-3">
               <User className="w-4 h-4" />
-              Perfil
+              <span className="hidden sm:inline">Perfil</span>
             </TabsTrigger>
-            <TabsTrigger value="support" className="flex items-center gap-2">
+            <TabsTrigger value="support" className="flex items-center gap-1 md:gap-2 px-2 md:px-3">
               <MessageSquare className="w-4 h-4" />
-              Suporte
+              <span className="hidden md:inline">Suporte</span>
             </TabsTrigger>
           </TabsList>
 

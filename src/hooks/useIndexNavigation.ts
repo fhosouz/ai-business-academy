@@ -6,7 +6,7 @@ export const useIndexNavigation = (courses: any[]) => {
   const [coursesView, setCoursesView] = useState<'categories' | 'lessons' | 'player'>('categories');
   const [selectedCategory, setSelectedCategory] = useState<{ id: number; name: string; courseId?: number } | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-  const [adminView, setAdminView] = useState<'courses' | 'lessons' | 'admins' | 'analytics'>('analytics');
+  const [adminView, setAdminView] = useState<'courses' | 'lessons' | 'admins' | 'analytics' | 'notifications'>('analytics');
 
   const handleCategorySelect = (categoryId: number, categoryName: string) => {
     setSelectedCategory({ id: categoryId, name: categoryName });
