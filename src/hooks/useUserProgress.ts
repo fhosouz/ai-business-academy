@@ -6,8 +6,12 @@ interface UserProgress {
   totalCourses: number;
   completedCourses: number;
   inProgress: number;
-  totalXP: number;
+  totalXP: number; // Keeping for compatibility
+  totalPoints: number;
   level: number;
+  levelName: string;
+  nextLevelPoints: number;
+  progressToNext: number;
   badges: number;
 }
 
@@ -17,7 +21,11 @@ export const useUserProgress = () => {
     completedCourses: 0,
     inProgress: 0,
     totalXP: 0,
+    totalPoints: 0,
     level: 1,
+    levelName: "Iniciante",
+    nextLevelPoints: 800,
+    progressToNext: 0,
     badges: 0,
   });
   const [loading, setLoading] = useState(true);
@@ -93,18 +101,42 @@ export const useUserProgress = () => {
       const completedLessons = progressData?.filter(p => p.status === 'completed').length || 0;
       const inProgressLessons = progressData?.filter(p => p.status === 'in_progress').length || 0;
       
-      // Calculate level and XP based on completed lessons
-      const xpPerLesson = 100;
-      const totalXP = completedLessons * xpPerLesson;
-      const level = Math.floor(totalXP / 500) + 1; // Level up every 500 XP
+      // Calculate points and level based on completed lessons
+      const pointsPerLesson = 50;
+      const totalPoints = completedLessons * pointsPerLesson;
+      
+      // Level calculation with descriptive names
+      let level = 1;
+      let levelName = "Iniciante";
+      
+      if (totalPoints >= 2000) {
+        level = 3;
+        levelName = "Avançado";
+      } else if (totalPoints >= 800) {
+        level = 2;
+        levelName = "Intermediário";
+      }
+      
+      const levelProgress = {
+        level,
+        levelName,
+        totalPoints,
+        nextLevelPoints: level === 1 ? 800 : level === 2 ? 2000 : totalPoints,
+        progressToNext: level === 1 ? (totalPoints / 800) * 100 : 
+                       level === 2 ? ((totalPoints - 800) / 1200) * 100 : 100
+      };
 
       setUserProgress({
         totalCourses: totalCategories || 0,
         completedCourses,
         inProgress: inProgressLessons,
         badges: totalBadges || 0,
-        level,
-        totalXP,
+        level: levelProgress.level,
+        levelName: levelProgress.levelName,
+        totalXP: totalPoints, // Renaming to maintain compatibility
+        totalPoints: totalPoints,
+        nextLevelPoints: levelProgress.nextLevelPoints,
+        progressToNext: levelProgress.progressToNext,
       });
     } catch (error) {
       console.error('Error fetching user progress:', error);

@@ -77,10 +77,10 @@ const AdminAnalytics = () => {
         count: ratingsData?.filter(r => r.rating === rating).length || 0
       }));
 
-      // Buscar dados reais de visualização de páginas
+      // Buscar dados reais de visualização de páginas com user_id
       const { data: pageViewsData } = await supabase
         .from('page_analytics')
-        .select('page_path')
+        .select('page_path, user_id, created_at')
         .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
       const pageViewsCount = pageViewsData?.reduce((acc, view) => {
@@ -284,6 +284,7 @@ const AdminAnalytics = () => {
   };
 
   const handleBarClick = (data: any) => {
+    console.log('Clicou na página:', data.page);
     fetchUserDetails('page', data.page);
     setShowDetailsModal(true);
   };

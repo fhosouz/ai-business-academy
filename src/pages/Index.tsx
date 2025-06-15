@@ -96,35 +96,42 @@ const Index = () => {
       <div className="container mx-auto px-2 md:px-4 py-4 md:py-8">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className={`grid w-full mb-6 md:mb-8 text-xs md:text-sm h-auto overflow-x-auto ${isAdmin ? 'grid-cols-4 md:grid-cols-7' : 'grid-cols-3 md:grid-cols-6'}`}>
-            <TabsTrigger value="dashboard" className="flex items-center gap-1 md:gap-2 px-2 md:px-3">
+            <TabsTrigger value="dashboard" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Visão geral do seu progresso e atividades">
               <Home className="w-4 h-4" />
-              <span className="hidden sm:inline">Dashboard</span>
+              <span className="hidden sm:inline text-xs">Dashboard</span>
+              <span className="text-xs text-muted-foreground hidden lg:block">Progresso geral</span>
             </TabsTrigger>
-            <TabsTrigger value="courses" className="flex items-center gap-1 md:gap-2 px-2 md:px-3">
+            <TabsTrigger value="courses" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Explore todos os cursos disponíveis">
               <BookOpen className="w-4 h-4" />
-              <span className="hidden sm:inline">Cursos</span>
+              <span className="hidden sm:inline text-xs">Cursos</span>
+              <span className="text-xs text-muted-foreground hidden lg:block">Conteúdo educacional</span>
             </TabsTrigger>
-            <TabsTrigger value="trends" className="flex items-center gap-1 md:gap-2 px-2 md:px-3">
+            <TabsTrigger value="trends" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Acompanhe as tendências em IA">
               <Calendar className="w-4 h-4" />
-              <span className="hidden sm:inline">Tendências</span>
+              <span className="hidden sm:inline text-xs">Tendências</span>
+              <span className="text-xs text-muted-foreground hidden lg:block">Novidades em IA</span>
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="admin" className="flex items-center gap-1 md:gap-2 px-2 md:px-3">
+              <TabsTrigger value="admin" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Gerenciar plataforma e usuários">
                 <Settings className="w-4 h-4" />
-                <span className="hidden md:inline">Admin</span>
+                <span className="hidden md:inline text-xs">Admin</span>
+                <span className="text-xs text-muted-foreground hidden lg:block">Administração</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="badges" className="flex items-center gap-1 md:gap-2 px-2 md:px-3">
+            <TabsTrigger value="badges" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Suas conquistas e certificados">
               <Trophy className="w-4 h-4" />
-              <span className="hidden sm:inline">Badges</span>
+              <span className="hidden sm:inline text-xs">Badges</span>
+              <span className="text-xs text-muted-foreground hidden lg:block">Conquistas</span>
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-1 md:gap-2 px-2 md:px-3">
+            <TabsTrigger value="profile" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Configurações da sua conta">
               <User className="w-4 h-4" />
-              <span className="hidden sm:inline">Perfil</span>
+              <span className="hidden sm:inline text-xs">Perfil</span>
+              <span className="text-xs text-muted-foreground hidden lg:block">Minha conta</span>
             </TabsTrigger>
-            <TabsTrigger value="support" className="flex items-center gap-1 md:gap-2 px-2 md:px-3">
+            <TabsTrigger value="support" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Obtenha ajuda e suporte">
               <MessageSquare className="w-4 h-4" />
-              <span className="hidden md:inline">Suporte</span>
+              <span className="hidden md:inline text-xs">Suporte</span>
+              <span className="text-xs text-muted-foreground hidden lg:block">Ajuda</span>
             </TabsTrigger>
           </TabsList>
 

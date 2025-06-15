@@ -8,7 +8,11 @@ interface UserProgress {
   completedCourses: number;
   inProgress: number;
   totalXP: number;
+  totalPoints?: number;
   level: number;
+  levelName?: string;
+  nextLevelPoints?: number;
+  progressToNext?: number;
   badges: number;
 }
 
@@ -18,8 +22,8 @@ interface ProgressStatsProps {
 
 const ProgressStats = ({ userProgress }: ProgressStatsProps) => {
   const completionRate = (userProgress.completedCourses / userProgress.totalCourses) * 100;
-  const nextLevelXP = (userProgress.level + 1) * 500;
-  const currentLevelProgress = ((userProgress.totalXP % 500) / 500) * 100;
+  const totalPoints = userProgress.totalPoints || userProgress.totalXP;
+  const currentLevelProgress = userProgress.progressToNext || 0;
 
   const stats = [
     {
@@ -45,9 +49,9 @@ const ProgressStats = ({ userProgress }: ProgressStatsProps) => {
       bgColor: "bg-purple-50"
     },
     {
-      title: "Experiência Total",
-      value: userProgress.totalXP,
-      suffix: "XP",
+      title: "Pontos Total",
+      value: totalPoints,
+      suffix: "pts",
       icon: User,
       color: "text-orange-600",
       bgColor: "bg-orange-50"
@@ -94,14 +98,17 @@ const ProgressStats = ({ userProgress }: ProgressStatsProps) => {
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Nível {userProgress.level}</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{userProgress.levelName || 'Iniciante'} - Nível {userProgress.level}</h3>
               <p className="text-sm text-gray-600">
-                {500 - (userProgress.totalXP % 500)} XP para o próximo nível
+                {userProgress.nextLevelPoints && userProgress.level < 3 
+                  ? `${userProgress.nextLevelPoints - totalPoints} pontos para o próximo nível`
+                  : userProgress.level === 3 ? 'Nível máximo alcançado!' : 'Continue progredindo!'
+                }
               </p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                {userProgress.totalXP} XP
+                {totalPoints} pts
               </div>
             </div>
           </div>
