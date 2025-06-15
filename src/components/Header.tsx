@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Bell, Search, User, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserPlan } from "@/hooks/useUserPlan";
 import SearchComponent from "./SearchComponent";
 
 interface HeaderProps {
@@ -13,9 +14,23 @@ interface HeaderProps {
 
 const Header = ({ onResultSelect }: HeaderProps) => {
   const { user, signOut } = useAuth();
+  const { plan } = useUserPlan();
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const getPlanDisplayName = () => {
+    switch (plan) {
+      case 'free':
+        return 'Free';
+      case 'premium':
+        return 'Premium';
+      case 'enterprise':
+        return 'Enterprise';
+      default:
+        return 'Free';
+    }
   };
 
   return (
@@ -74,7 +89,7 @@ const Header = ({ onResultSelect }: HeaderProps) => {
                 <p className="text-sm font-medium">
                   {user?.user_metadata?.full_name || user?.email || 'Usuário'}
                 </p>
-                <p className="text-xs text-gray-500">Premium</p>
+                <p className="text-xs text-gray-500">{getPlanDisplayName()}</p>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
