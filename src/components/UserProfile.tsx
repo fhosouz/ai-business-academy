@@ -52,7 +52,7 @@ const UserProfile = () => {
       if (data) {
         setProfile({
           display_name: data.display_name || getUserDisplayName(),
-          avatar_url: data.avatar_url || "",
+          avatar_url: data.avatar_url || data.picture_url || user?.user_metadata?.picture || "",
           bio: "",
           location: "",
           website: "",
@@ -92,7 +92,7 @@ const UserProfile = () => {
   const getUserDisplayName = () => {
     if (!user) return "Usuário";
     
-    const displayName = user.user_metadata?.display_name || user.user_metadata?.full_name;
+    const displayName = user.user_metadata?.name || user.user_metadata?.display_name || user.user_metadata?.full_name;
     if (displayName) return displayName;
     
     if (user.email) {
@@ -230,9 +230,14 @@ const UserProfile = () => {
                 <p className="text-muted-foreground">{user?.email}</p>
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <PlanBadge plan={plan} />
                 <Badge variant="outline">Nível {userProgress.level}</Badge>
+                {plan === 'free' && (
+                  <Badge variant="secondary" className="text-xs">
+                    Acesso Limitado
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
