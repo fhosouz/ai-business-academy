@@ -24,7 +24,7 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
   useEffect(() => {
     fetchLessons();
     fetchCourses();
-  }, [courseId]);
+  }, [courseId, isAdmin]);
 
   const fetchLessons = async () => {
     try {
