@@ -35,6 +35,7 @@ const LessonForm = ({ courseId, courses, onLessonCreated, lessonsCount, editingL
     is_free: editingLesson?.is_free || false,
     course_id: editingLesson?.course_id || courseId,
     order_index: editingLesson?.order_index ?? lessonsCount,
+    plan_type: editingLesson?.plan_type || "free",
   });
   const { toast } = useToast();
 
@@ -57,6 +58,7 @@ const LessonForm = ({ courseId, courses, onLessonCreated, lessonsCount, editingL
         is_free: editingLesson.is_free || false,
         course_id: editingLesson.course_id || courseId,
         order_index: editingLesson.order_index ?? lessonsCount,
+        plan_type: editingLesson.plan_type || "free",
       });
     } else {
       setIsOpen(false);
@@ -121,6 +123,7 @@ const LessonForm = ({ courseId, courses, onLessonCreated, lessonsCount, editingL
             course_id: newLesson.course_id,
             category_id: courseData.category_id,
             order_index: newLesson.order_index,
+            plan_type: newLesson.plan_type,
           })
           .eq('id', editingLesson.id);
 
@@ -146,6 +149,7 @@ const LessonForm = ({ courseId, courses, onLessonCreated, lessonsCount, editingL
             is_free: newLesson.is_free,
             category_id: courseData.category_id,
             order_index: newLesson.order_index,
+            plan_type: newLesson.plan_type,
           });
 
         if (error) throw error;
@@ -163,6 +167,7 @@ const LessonForm = ({ courseId, courses, onLessonCreated, lessonsCount, editingL
         is_free: false,
         course_id: courseId,
         order_index: lessonsCount,
+        plan_type: "free",
       });
       setIsOpen(false);
       onLessonCreated();
@@ -255,6 +260,24 @@ const LessonForm = ({ courseId, courses, onLessonCreated, lessonsCount, editingL
                 placeholder="Ordem da aula (0, 1, 2...)"
                 min="0"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="plan-type">Tipo de Plano</Label>
+              <Select 
+                name="plan_type"
+                value={newLesson.plan_type} 
+                onValueChange={(value) => setNewLesson(prev => ({ ...prev, plan_type: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo de plano" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Gratuito</SelectItem>
+                  <SelectItem value="premium">Premium</SelectItem>
+                  <SelectItem value="enterprise">Enterprise</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex items-center space-x-2">

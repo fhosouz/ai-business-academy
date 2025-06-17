@@ -266,35 +266,6 @@ const AdminManager = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UserPlus className="w-5 h-5" />
-            Adicionar Administrador
-          </CardTitle>
-          <CardDescription>
-            Promova um usuário existente a administrador informando seu email
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="admin-email">Email do Usuário</Label>
-            <Input
-              id="admin-email"
-              type="email"
-              value={newAdminEmail}
-              onChange={(e) => setNewAdminEmail(e.target.value)}
-              placeholder="email@exemplo.com"
-            />
-            <p className="text-sm text-muted-foreground mt-1">
-              O usuário deve estar registrado no sistema
-            </p>
-          </div>
-          <Button onClick={addExistingAdmin} disabled={loading} className="w-full">
-            {loading ? "Adicionando..." : "Promover a Administrador"}
-          </Button>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>
