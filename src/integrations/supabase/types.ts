@@ -144,6 +144,7 @@ export type Database = {
           id: string
           is_free: boolean | null
           order_index: number
+          plan_type: Database["public"]["Enums"]["plan_type"] | null
           title: string
           updated_at: string
           video_duration: number | null
@@ -158,6 +159,7 @@ export type Database = {
           id?: string
           is_free?: boolean | null
           order_index?: number
+          plan_type?: Database["public"]["Enums"]["plan_type"] | null
           title: string
           updated_at?: string
           video_duration?: number | null
@@ -172,6 +174,7 @@ export type Database = {
           id?: string
           is_free?: boolean | null
           order_index?: number
+          plan_type?: Database["public"]["Enums"]["plan_type"] | null
           title?: string
           updated_at?: string
           video_duration?: number | null
