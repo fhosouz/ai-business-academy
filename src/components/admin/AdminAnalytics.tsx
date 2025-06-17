@@ -112,7 +112,7 @@ const AdminAnalytics = () => {
       const pageViews = Object.entries(pageViewsCount)
         .map(([page, views]) => ({ page, views }))
         .sort((a, b) => b.views - a.views)
-        .slice(0, 10);
+        .slice(0, 5);
 
       // Top aulas mais bem avaliadas com dados reais
       const { data: ratingsWithLessons } = await supabase
@@ -206,15 +206,17 @@ const AdminAnalytics = () => {
           }
           break;
           
-        case 'page':
+          case 'page':
           setModalTitle(`Usuários que Acessaram ${planType}`);
+          const pagePath = planType === 'Dashboard' ? '/' : 
+                          planType === 'Cursos' ? '/courses' : 
+                          planType === 'Perfil' ? '/profile' : 
+                          planType === 'Admin' ? '/admin' : planType;
+          
           const { data: pageUsers } = await supabase
             .from('page_analytics')
             .select('user_id')
-            .eq('page_path', planType === 'Dashboard' ? '/' : 
-                 planType === 'Cursos' ? '/courses' : 
-                 planType === 'Perfil' ? '/profile' : 
-                 planType === 'Admin' ? '/admin' : planType)
+            .eq('page_path', pagePath)
             .not('user_id', 'is', null);
           
           const pageUserIds = [...new Set(pageUsers?.map(p => p.user_id))];
@@ -249,12 +251,33 @@ const AdminAnalytics = () => {
 
       if (rolesError) throw rolesError;
 
+      // Se é uma consulta de página, buscar contagem de acessos
+      let accessCounts: Record<string, number> = {};
+      if (type === 'page' && planType) {
+        const pagePath = planType === 'Dashboard' ? '/' : 
+                        planType === 'Cursos' ? '/courses' : 
+                        planType === 'Perfil' ? '/profile' : 
+                        planType === 'Admin' ? '/admin' : planType;
+        
+        const { data: accessData } = await supabase
+          .from('page_analytics')
+          .select('user_id')
+          .eq('page_path', pagePath)
+          .not('user_id', 'is', null);
+        
+        accessCounts = accessData?.reduce((acc, access) => {
+          acc[access.user_id] = (acc[access.user_id] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>) || {};
+      }
+
       // Combinar os dados
       const combinedData = profiles?.map(profile => {
         const userRole = roles?.find(role => role.user_id === profile.user_id);
         return {
           ...profile,
-          user_roles: userRole || { plan_type: 'free', role: 'user' }
+          user_roles: userRole || { plan_type: 'free', role: 'user' },
+          access_count: accessCounts[profile.user_id] || 0
         };
       }) || [];
 
@@ -493,15 +516,15 @@ const AdminAnalytics = () => {
           ) : (
             <div className="mt-4">
               {userDetails.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Plano</TableHead>
-                      <TableHead>Função</TableHead>
-                      <TableHead>Data de Cadastro</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Plano</TableHead>
+                        <TableHead>{modalTitle.includes('Acessaram') ? 'Acessos' : 'Função'}</TableHead>
+                        <TableHead>Data de Cadastro</TableHead>
+                      </TableRow>
+                    </TableHeader>
                   <TableBody>
                     {userDetails.map((user, index) => (
                       <TableRow key={index}>
@@ -528,9 +551,15 @@ const AdminAnalytics = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={user.user_roles.role === 'admin' ? 'destructive' : 'outline'}>
-                            {user.user_roles.role === 'admin' ? 'Admin' : 'Usuário'}
-                          </Badge>
+                          {modalTitle.includes('Acessaram') ? (
+                            <Badge variant="outline">
+                              {user.access_count} acesso{user.access_count !== 1 ? 's' : ''}
+                            </Badge>
+                          ) : (
+                            <Badge variant={user.user_roles.role === 'admin' ? 'destructive' : 'outline'}>
+                              {user.user_roles.role === 'admin' ? 'Admin' : 'Usuário'}
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           {new Date(user.created_at).toLocaleDateString('pt-BR')}

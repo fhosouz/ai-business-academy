@@ -32,7 +32,8 @@ const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
         .from('lessons')
         .select('*, categories(id, name)');
 
-      // Se não for admin, filtrar por course_id
+      // Para admins, mostrar todas as aulas
+      // Para não-admins, filtrar por course_id específico
       if (!isAdmin) {
         query = query.eq('course_id', courseId);
       }
