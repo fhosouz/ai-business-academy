@@ -64,12 +64,14 @@ const AdminManager = () => {
 
       // Get user emails from auth.users through profiles table
       const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-      if (authError) throw authError;
+      if (authError) {
+        console.warn('Could not fetch auth users:', authError);
+      }
 
       // Combine the data
       const formattedUsers = adminRoles.map(role => {
         const profile = profiles?.find(p => p.user_id === role.user_id);
-        const authUser = authUsers?.users?.find(u => u.id === role.user_id);
+        const authUser = authUsers && authUsers.users ? authUsers.users.find((u: any) => u.id === role.user_id) : null;
         return {
           id: role.user_id,
           email: authUser?.email || 'email@naodiponivel.com',
