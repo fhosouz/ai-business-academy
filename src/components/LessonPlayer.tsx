@@ -129,6 +129,35 @@ const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
     markAsInProgress();
   };
 
+  const isYouTubeUrl = (url: string): boolean => {
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/)|youtu\.be\/)[\w-]+/;
+    return youtubeRegex.test(url);
+  };
+
+  const convertToEmbedUrl = (url: string): string => {
+    // Se já é uma URL de embed, retorna como está
+    if (url.includes('youtube.com/embed/')) {
+      return url;
+    }
+    
+    // Extrai o ID do vídeo de diferentes formatos
+    let videoId = '';
+    
+    // Para URLs youtu.be/VIDEO_ID
+    const youtuBeMatch = url.match(/youtu\.be\/([^?&]+)/);
+    if (youtuBeMatch) {
+      videoId = youtuBeMatch[1];
+    }
+    
+    // Para URLs youtube.com/watch?v=VIDEO_ID
+    const youtubeMatch = url.match(/youtube\.com\/watch\?v=([^&]+)/);
+    if (youtubeMatch) {
+      videoId = youtubeMatch[1];
+    }
+    
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8">
@@ -160,13 +189,14 @@ const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
         <CardContent className="space-y-6">
           {lesson.video_url ? (
             <div className="w-full aspect-video bg-muted rounded-lg overflow-hidden">
-              {lesson.video_url.includes('youtube.com/embed/') ? (
+              {isYouTubeUrl(lesson.video_url) ? (
                 <iframe 
                   className="w-full h-full"
-                  src={lesson.video_url}
+                  src={convertToEmbedUrl(lesson.video_url)}
                   title={lesson.title}
                   frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
                   allowFullScreen
                   onLoad={handleVideoPlay}
                 />
