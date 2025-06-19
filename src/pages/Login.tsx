@@ -90,7 +90,7 @@ const Login = () => {
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/login?message=confirmed`,
           data: {
             full_name: formData.fullName,
             display_name: formData.fullName
@@ -100,10 +100,33 @@ const Login = () => {
 
       if (error) throw error;
 
+      // Enviar email de boas-vindas
+      try {
+        await supabase.functions.invoke('send-welcome-email', {
+          body: {
+            email: formData.email,
+            name: formData.fullName,
+            confirmationUrl: `${window.location.origin}/login?message=confirmed`
+          }
+        });
+      } catch (emailError) {
+        console.error('Erro ao enviar email de boas-vindas:', emailError);
+        // Não bloquear o cadastro se o email falhar
+      }
+
       toast({
-        title: "Cadastro realizado!",
-        description: "Verifique seu email para confirmar a conta.",
+        title: "🎉 Cadastro realizado com sucesso!",
+        description: "Enviamos um email de confirmação elegante para você. Verifique sua caixa de entrada e confirme sua conta para começar sua jornada na AutomatizeAI Academy!",
       });
+
+      // Limpar o formulário
+      setFormData({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        fullName: ''
+      });
+
     } catch (error) {
       toast({
         title: "Erro no cadastro",
@@ -119,7 +142,21 @@ const Login = () => {
     if (user && !loading) {
       navigate('/');
     }
-  }, [user, loading, navigate]);
+    
+    // Verificar se o usuário retornou após confirmar o email
+    const urlParams = new URLSearchParams(window.location.search);
+    const message = urlParams.get('message');
+    
+    if (message === 'confirmed') {
+      toast({
+        title: "✅ Email confirmado com sucesso!",
+        description: "Sua conta foi ativada! Agora você pode fazer login com seu email e senha para acessar a AutomatizeAI Academy.",
+      });
+      
+      // Limpar o parâmetro da URL
+      window.history.replaceState({}, '', '/login');
+    }
+  }, [user, loading, navigate, toast]);
 
   if (loading) {
     return (
