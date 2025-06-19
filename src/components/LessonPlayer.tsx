@@ -160,19 +160,31 @@ const LessonPlayer = ({ lesson, onBack }: LessonPlayerProps) => {
         <CardContent className="space-y-6">
           {lesson.video_url ? (
             <div className="w-full aspect-video bg-muted rounded-lg overflow-hidden">
-              <video 
-                controls 
-                className="w-full h-full"
-                src={lesson.video_url}
-                crossOrigin="anonymous"
-                preload="metadata"
-                onPlay={handleVideoPlay}
-              >
-                <source src={lesson.video_url} type="video/mp4" />
-                <source src={lesson.video_url} type="video/webm" />
-                <source src={lesson.video_url} type="video/ogg" />
-                Seu navegador não suporta vídeos HTML5.
-              </video>
+              {lesson.video_url.includes('youtube.com/embed/') ? (
+                <iframe 
+                  className="w-full h-full"
+                  src={lesson.video_url}
+                  title={lesson.title}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  onLoad={handleVideoPlay}
+                />
+              ) : (
+                <video 
+                  controls 
+                  className="w-full h-full"
+                  src={lesson.video_url}
+                  crossOrigin="anonymous"
+                  preload="metadata"
+                  onPlay={handleVideoPlay}
+                >
+                  <source src={lesson.video_url} type="video/mp4" />
+                  <source src={lesson.video_url} type="video/webm" />
+                  <source src={lesson.video_url} type="video/ogg" />
+                  Seu navegador não suporta vídeos HTML5.
+                </video>
+              )}
             </div>
           ) : (
             <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
