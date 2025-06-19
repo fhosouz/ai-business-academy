@@ -1,17 +1,18 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Users, Shield, BarChart3, Bell } from "lucide-react";
+import { BookOpen, Users, Shield, BarChart3, Bell, FileText } from "lucide-react";
 import CourseManager from "@/components/CourseManager";
 import LessonManager from "@/components/LessonManager";
 import AdminManager from "@/components/AdminManager";
+import ArticleManager from "@/components/ArticleManager";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import NotificationManager from "@/components/admin/NotificationManager";
 
 interface AdminTabsContentProps {
   isAdmin: boolean;
   roleLoading: boolean;
-  adminView: 'courses' | 'lessons' | 'admins' | 'analytics' | 'notifications';
-  setAdminView: (view: 'courses' | 'lessons' | 'admins' | 'analytics' | 'notifications') => void;
+  adminView: 'courses' | 'lessons' | 'admins' | 'analytics' | 'notifications' | 'articles';
+  setAdminView: (view: 'courses' | 'lessons' | 'admins' | 'analytics' | 'notifications' | 'articles') => void;
 }
 
 const AdminTabsContent = ({ isAdmin, roleLoading, adminView, setAdminView }: AdminTabsContentProps) => {
@@ -44,8 +45,8 @@ const AdminTabsContent = ({ isAdmin, roleLoading, adminView, setAdminView }: Adm
         <h1 className="text-3xl font-bold">Painel de Administração</h1>
       </div>
       
-      <Tabs value={adminView} onValueChange={(value) => setAdminView(value as 'courses' | 'lessons' | 'admins' | 'analytics' | 'notifications')} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 mb-6 h-auto">
+      <Tabs value={adminView} onValueChange={(value) => setAdminView(value as 'courses' | 'lessons' | 'admins' | 'analytics' | 'notifications' | 'articles')} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 mb-6 h-auto">
           <TabsTrigger value="analytics" className="flex items-center gap-2 text-xs md:text-sm">
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline">Analytics</span>
@@ -57,6 +58,10 @@ const AdminTabsContent = ({ isAdmin, roleLoading, adminView, setAdminView }: Adm
           <TabsTrigger value="lessons" className="flex items-center gap-2 text-xs md:text-sm">
             <BookOpen className="w-4 h-4" />
             <span className="hidden sm:inline">Aulas</span>
+          </TabsTrigger>
+          <TabsTrigger value="articles" className="flex items-center gap-2 text-xs md:text-sm">
+            <FileText className="w-4 h-4" />
+            <span className="hidden sm:inline">Artigos</span>
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-2 text-xs md:text-sm">
             <Bell className="w-4 h-4" />
@@ -81,6 +86,10 @@ const AdminTabsContent = ({ isAdmin, roleLoading, adminView, setAdminView }: Adm
             courseId={1} 
             courseName="IA Generativa para Negócios" 
           />
+        </TabsContent>
+
+        <TabsContent value="articles">
+          <ArticleManager />
         </TabsContent>
 
         <TabsContent value="notifications">

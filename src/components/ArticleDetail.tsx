@@ -2,17 +2,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calendar, User, Clock } from "lucide-react";
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface Article {
-  id: number;
+  id: string;
   title: string;
   excerpt: string;
   content: string;
   category: string;
   author: string;
-  publishedAt: string;
-  readTime: string;
-  image: string;
+  published_at: string;
+  image_url: string;
 }
 
 interface ArticleDetailProps {
@@ -21,6 +22,13 @@ interface ArticleDetailProps {
 }
 
 const ArticleDetail = ({ article, onBack }: ArticleDetailProps) => {
+  const calculateReadTime = (content: string) => {
+    const wordsPerMinute = 200;
+    const words = content.split(' ').length;
+    const readTime = Math.ceil(words / wordsPerMinute);
+    return `${readTime} min`;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -41,11 +49,11 @@ const ArticleDetail = ({ article, onBack }: ArticleDetailProps) => {
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
-                {article.publishedAt}
+                {format(new Date(article.published_at), 'dd \'de\' MMM, yyyy', { locale: ptBR })}
               </div>
               <div className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />
-                {article.readTime}
+                {calculateReadTime(article.content)}
               </div>
             </div>
           </div>
@@ -55,9 +63,12 @@ const ArticleDetail = ({ article, onBack }: ArticleDetailProps) => {
         <CardContent className="space-y-6">
           <div className="aspect-video bg-muted rounded-lg overflow-hidden">
             <img 
-              src={`https://images.unsplash.com/${article.image}?q=80&w=1200&auto=format&fit=crop`}
+              src={article.image_url || 'https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=1200&auto=format&fit=crop'}
               alt={article.title}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = 'https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=1200&auto=format&fit=crop';
+              }}
             />
           </div>
           
