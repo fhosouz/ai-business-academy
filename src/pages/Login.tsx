@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { BookOpen, Mail, Lock, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { PasswordStrengthMeter } from '@/components/PasswordStrengthMeter';
+import { validateEmail, validatePassword, validateName, sanitizeInput } from '@/utils/inputValidation';
 
 const Login = () => {
   const { user, loading, signInWithGoogle } = useAuth();
@@ -17,12 +20,78 @@ const Login = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
+  const [isPasswordStrong, setIsPasswordStrong] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
     fullName: ''
   });
+  const [formErrors, setFormErrors] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    fullName: ''
+  });
+
+  const validateForm = (isSignUp: boolean = false) => {
+    const errors = { email: '', password: '', confirmPassword: '', fullName: '' };
+    let isValid = true;
+
+    // Email validation
+    if (!formData.email) {
+      errors.email = 'Email é obrigatório';
+      isValid = false;
+    } else if (!validateEmail(formData.email)) {
+      errors.email = 'Email inválido';
+      isValid = false;
+    }
+
+    // Password validation for signup
+    if (isSignUp) {
+      if (!formData.password) {
+        errors.password = 'Senha é obrigatória';
+        isValid = false;
+      } else if (!validatePassword(formData.password)) {
+        errors.password = 'Senha não atende aos critérios de segurança';
+        isValid = false;
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = 'As senhas não coincidem';
+        isValid = false;
+      }
+
+      if (!formData.fullName) {
+        errors.fullName = 'Nome completo é obrigatório';
+        isValid = false;
+      } else if (!validateName(formData.fullName)) {
+        errors.fullName = 'Nome deve ter entre 2 e 50 caracteres e conter apenas letras';
+        isValid = false;
+      }
+    } else {
+      // Login validation (less strict)
+      if (!formData.password) {
+        errors.password = 'Senha é obrigatória';
+        isValid = false;
+      }
+    }
+
+    setFormErrors(errors);
+    return isValid;
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    // Sanitize input
+    const sanitizedValue = sanitizeInput(value, field === 'fullName' ? 50 : 255);
+    
+    setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
+    
+    // Clear error when user starts typing
+    if (formErrors[field as keyof typeof formErrors]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -46,6 +115,11 @@ const Login = () => {
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm(false)) {
+      return;
+    }
+
     setIsLoading(true);
     
     try {
@@ -74,12 +148,14 @@ const Login = () => {
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Erro",
-        description: "As senhas não coincidem",
-        variant: "destructive",
-      });
+    if (!validateForm(true) || !isPasswordStrong) {
+      if (!isPasswordStrong) {
+        toast({
+          title: "Erro",
+          description: "A senha não atende aos critérios de segurança",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
@@ -92,8 +168,8 @@ const Login = () => {
         options: {
           emailRedirectTo: `${window.location.origin}/login?message=confirmed`,
           data: {
-            full_name: formData.fullName,
-            display_name: formData.fullName
+            full_name: sanitizeInput(formData.fullName, 50),
+            display_name: sanitizeInput(formData.fullName, 50)
           }
         }
       });
@@ -105,7 +181,7 @@ const Login = () => {
         await supabase.functions.invoke('send-welcome-email', {
           body: {
             email: formData.email,
-            name: formData.fullName,
+            name: sanitizeInput(formData.fullName, 50),
             confirmationUrl: `${window.location.origin}/login?message=confirmed`
           }
         });
@@ -121,6 +197,12 @@ const Login = () => {
 
       // Limpar o formulário
       setFormData({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        fullName: ''
+      });
+      setFormErrors({
         email: '',
         password: '',
         confirmPassword: '',
@@ -224,12 +306,13 @@ const Login = () => {
                         id="signin-email"
                         type="email"
                         placeholder="seu@email.com"
-                        className="pl-10"
+                        className={`pl-10 ${formErrors.email ? 'border-red-500' : ''}`}
                         value={formData.email}
-                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
                         required
                       />
                     </div>
+                    {formErrors.email && <p className="text-sm text-red-500">{formErrors.email}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signin-password">Senha</Label>
@@ -239,12 +322,13 @@ const Login = () => {
                         id="signin-password"
                         type="password"
                         placeholder="Sua senha"
-                        className="pl-10"
+                        className={`pl-10 ${formErrors.password ? 'border-red-500' : ''}`}
                         value={formData.password}
-                        onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                        onChange={(e) => handleInputChange('password', e.target.value)}
                         required
                       />
                     </div>
+                    {formErrors.password && <p className="text-sm text-red-500">{formErrors.password}</p>}
                   </div>
                   <Button 
                     type="submit" 
@@ -266,12 +350,13 @@ const Login = () => {
                         id="signup-name"
                         type="text"
                         placeholder="Seu nome completo"
-                        className="pl-10"
+                        className={`pl-10 ${formErrors.fullName ? 'border-red-500' : ''}`}
                         value={formData.fullName}
-                        onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
+                        onChange={(e) => handleInputChange('fullName', e.target.value)}
                         required
                       />
                     </div>
+                    {formErrors.fullName && <p className="text-sm text-red-500">{formErrors.fullName}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
@@ -281,12 +366,13 @@ const Login = () => {
                         id="signup-email"
                         type="email"
                         placeholder="seu@email.com"
-                        className="pl-10"
+                        className={`pl-10 ${formErrors.email ? 'border-red-500' : ''}`}
                         value={formData.email}
-                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
                         required
                       />
                     </div>
+                    {formErrors.email && <p className="text-sm text-red-500">{formErrors.email}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Senha</Label>
@@ -296,12 +382,17 @@ const Login = () => {
                         id="signup-password"
                         type="password"
                         placeholder="Escolha uma senha"
-                        className="pl-10"
+                        className={`pl-10 ${formErrors.password ? 'border-red-500' : ''}`}
                         value={formData.password}
-                        onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                        onChange={(e) => handleInputChange('password', e.target.value)}
                         required
                       />
                     </div>
+                    {formErrors.password && <p className="text-sm text-red-500">{formErrors.password}</p>}
+                    <PasswordStrengthMeter 
+                      password={formData.password} 
+                      onStrengthChange={setIsPasswordStrong}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-confirm">Confirmar Senha</Label>
@@ -311,17 +402,18 @@ const Login = () => {
                         id="signup-confirm"
                         type="password"
                         placeholder="Confirme sua senha"
-                        className="pl-10"
+                        className={`pl-10 ${formErrors.confirmPassword ? 'border-red-500' : ''}`}
                         value={formData.confirmPassword}
-                        onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                         required
                       />
                     </div>
+                    {formErrors.confirmPassword && <p className="text-sm text-red-500">{formErrors.confirmPassword}</p>}
                   </div>
                   <Button 
                     type="submit" 
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    disabled={isLoading || isSigningUp}
+                    disabled={isLoading || isSigningUp || !isPasswordStrong}
                   >
                     {isSigningUp ? 'Criando conta...' : 'Criar Conta'}
                   </Button>

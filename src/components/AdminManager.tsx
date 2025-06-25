@@ -10,6 +10,7 @@ import { User, UserPlus, Trash2, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
+import { validateEmail, validateName, sanitizeInput } from "@/utils/inputValidation";
 
 interface AdminUser {
   id: string;
@@ -24,9 +25,16 @@ const AdminManager = () => {
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [newAdminPassword, setNewAdminPassword] = useState("");
   const [newAdminName, setNewAdminName] = useState("");
+  const [existingUserEmail, setExistingUserEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchingUsers, setFetchingUsers] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [formErrors, setFormErrors] = useState({
+    email: '',
+    password: '',
+    name: '',
+    existingEmail: ''
+  });
   const { toast } = useToast();
   const { isAdmin } = useUserRole();
 
@@ -35,6 +43,66 @@ const AdminManager = () => {
       fetchAdminUsers();
     }
   }, [isAdmin]);
+
+  const validateCreateForm = () => {
+    const errors = { email: '', password: '', name: '', existingEmail: '' };
+    let isValid = true;
+
+    if (!newAdminEmail) {
+      errors.email = 'Email é obrigatório';
+      isValid = false;
+    } else if (!validateEmail(newAdminEmail)) {
+      errors.email = 'Email inválido';
+      isValid = false;
+    }
+
+    if (!newAdminPassword) {
+      errors.password = 'Senha é obrigatória';
+      isValid = false;
+    } else if (newAdminPassword.length < 8) {
+      errors.password = 'Senha deve ter pelo menos 8 caracteres';
+      isValid = false;
+    }
+
+    if (!newAdminName) {
+      errors.name = 'Nome é obrigatório';
+      isValid = false;
+    } else if (!validateName(newAdminName)) {
+      errors.name = 'Nome inválido';
+      isValid = false;
+    }
+
+    setFormErrors(prev => ({ ...prev, ...errors }));
+    return isValid;
+  };
+
+  const validateExistingUserForm = () => {
+    const errors = { email: '', password: '', name: '', existingEmail: '' };
+    let isValid = true;
+
+    if (!existingUserEmail) {
+      errors.existingEmail = 'Email é obrigatório';
+      isValid = false;
+    } else if (!validateEmail(existingUserEmail)) {
+      errors.existingEmail = 'Email inválido';
+      isValid = false;
+    }
+
+    setFormErrors(prev => ({ ...prev, ...errors }));
+    return isValid;
+  };
+
+  const logAdminAction = async (action: string, targetUserId?: string, details?: any) => {
+    try {
+      await supabase.rpc('log_admin_action', {
+        action_type: action,
+        target_user: targetUserId || null,
+        action_details: details ? JSON.stringify(details) : null
+      });
+    } catch (error) {
+      console.error('Failed to log admin action:', error);
+    }
+  };
 
   const fetchAdminUsers = async () => {
     try {
@@ -95,24 +163,22 @@ const AdminManager = () => {
   };
 
   const createNewAdmin = async () => {
-    if (!newAdminEmail || !newAdminPassword || !newAdminName) {
-      toast({
-        title: "Erro",
-        description: "Todos os campos são obrigatórios.",
-        variant: "destructive",
-      });
+    if (!validateCreateForm()) {
       return;
     }
 
     setLoading(true);
     try {
+      const sanitizedName = sanitizeInput(newAdminName, 50);
+      const sanitizedEmail = sanitizeInput(newAdminEmail, 255);
+
       // Create new user with Supabase Auth
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email: newAdminEmail,
+        email: sanitizedEmail,
         password: newAdminPassword,
         options: {
           data: {
-            display_name: newAdminName
+            display_name: sanitizedName
           },
           emailRedirectTo: `${window.location.origin}/`
         }
@@ -133,11 +199,18 @@ const AdminManager = () => {
 
       if (roleError) throw roleError;
 
+      // Log admin action
+      await logAdminAction('create_admin', data.user.id, {
+        email: sanitizedEmail,
+        name: sanitizedName
+      });
+
       // Clear form
       setNewAdminEmail("");
       setNewAdminPassword("");
       setNewAdminName("");
       setShowCreateForm(false);
+      setFormErrors({ email: '', password: '', name: '', existingEmail: '' });
       
       fetchAdminUsers();
 
@@ -158,25 +231,23 @@ const AdminManager = () => {
   };
 
   const addExistingAdmin = async () => {
-    if (!newAdminEmail) {
-      toast({
-        title: "Erro",
-        description: "Email é obrigatório.",
-        variant: "destructive",
-      });
+    if (!validateExistingUserForm()) {
       return;
     }
 
     setLoading(true);
     try {
-      // Search for user by email in profiles table using display_name for now
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_id, display_name')
-        .ilike('display_name', `%${newAdminEmail}%`)
-        .single();
-      
-      if (profileError || !profile) {
+      const sanitizedEmail = sanitizeInput(existingUserEmail, 255);
+
+      // Get user by email using a more reliable method
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      if (authError) throw new Error('Erro ao buscar usuários');
+
+      const targetUser = authUsers.users?.find((user: any) => 
+        user.email?.toLowerCase() === sanitizedEmail.toLowerCase()
+      );
+
+      if (!targetUser) {
         toast({
           title: "Erro",
           description: "Usuário com este email não encontrado. O usuário deve estar registrado primeiro.",
@@ -185,7 +256,7 @@ const AdminManager = () => {
         return;
       }
       
-      const targetUserId = profile.user_id;
+      const targetUserId = targetUser.id;
       
       // Check if user already has admin role
       const { data: existingRole } = await supabase
@@ -214,7 +285,13 @@ const AdminManager = () => {
 
       if (insertError) throw insertError;
 
-      setNewAdminEmail("");
+      // Log admin action
+      await logAdminAction('promote_to_admin', targetUserId, {
+        email: sanitizedEmail
+      });
+
+      setExistingUserEmail("");
+      setFormErrors({ email: '', password: '', name: '', existingEmail: '' });
       fetchAdminUsers();
 
       toast({
@@ -241,6 +318,9 @@ const AdminManager = () => {
         .eq('user_id', userId);
 
       if (error) throw error;
+
+      // Log admin action
+      await logAdminAction('remove_admin', userId);
 
       fetchAdminUsers();
       toast({
@@ -273,85 +353,125 @@ const AdminManager = () => {
 
   return (
     <div className="space-y-6">
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5" />
-            Criar Novo Administrador
+            Gerenciar Administradores
           </CardTitle>
           <CardDescription>
-            Criar um novo usuário com permissões de administrador
+            Criar novos administradores ou promover usuários existentes
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {!showCreateForm ? (
-            <Button 
-              onClick={() => setShowCreateForm(true)} 
-              variant="outline" 
-              className="w-full"
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Criar Novo Administrador
-            </Button>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="new-admin-name">Nome Completo</Label>
-                <Input
-                  id="new-admin-name"
-                  type="text"
-                  value={newAdminName}
-                  onChange={(e) => setNewAdminName(e.target.value)}
-                  placeholder="Nome do administrador"
-                />
+        <CardContent className="space-y-6">
+          {/* Create New Admin Section */}
+          <div className="space-y-4">
+            <h4 className="font-medium">Criar Novo Administrador</h4>
+            {!showCreateForm ? (
+              <Button 
+                onClick={() => setShowCreateForm(true)} 
+                variant="outline" 
+                className="w-full"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Criar Novo Administrador
+              </Button>
+            ) : (
+              <div className="space-y-4 border rounded-lg p-4">
+                <div>
+                  <Label htmlFor="new-admin-name">Nome Completo</Label>
+                  <Input
+                    id="new-admin-name"
+                    type="text"
+                    value={newAdminName}
+                    onChange={(e) => setNewAdminName(sanitizeInput(e.target.value, 50))}
+                    placeholder="Nome do administrador"
+                    className={formErrors.name ? 'border-red-500' : ''}
+                  />
+                  {formErrors.name && <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="new-admin-email">Email</Label>
+                  <Input
+                    id="new-admin-email"
+                    type="email"
+                    value={newAdminEmail}
+                    onChange={(e) => setNewAdminEmail(sanitizeInput(e.target.value, 255))}
+                    placeholder="email@exemplo.com"
+                    className={formErrors.email ? 'border-red-500' : ''}
+                  />
+                  {formErrors.email && <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="new-admin-password">Senha</Label>
+                  <Input
+                    id="new-admin-password"
+                    type="password"
+                    value={newAdminPassword}
+                    onChange={(e) => setNewAdminPassword(e.target.value)}
+                    placeholder="Senha segura"
+                    className={formErrors.password ? 'border-red-500' : ''}
+                  />
+                  {formErrors.password && <p className="text-sm text-red-500 mt-1">{formErrors.password}</p>}
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Mínimo 8 caracteres
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={createNewAdmin} 
+                    disabled={loading} 
+                    className="flex-1"
+                  >
+                    {loading ? "Criando..." : "Criar Administrador"}
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setShowCreateForm(false);
+                      setNewAdminEmail("");
+                      setNewAdminPassword("");
+                      setNewAdminName("");
+                      setFormErrors({ email: '', password: '', name: '', existingEmail: '' });
+                    }} 
+                    variant="outline"
+                    disabled={loading}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
               </div>
+            )}
+          </div>
+
+          {/* Promote Existing User Section */}
+          <div className="space-y-4">
+            <h4 className="font-medium">Promover Usuário Existente</h4>
+            <div className="space-y-4 border rounded-lg p-4">
               <div>
-                <Label htmlFor="new-admin-email">Email</Label>
+                <Label htmlFor="existing-user-email">Email do Usuário</Label>
                 <Input
-                  id="new-admin-email"
+                  id="existing-user-email"
                   type="email"
-                  value={newAdminEmail}
-                  onChange={(e) => setNewAdminEmail(e.target.value)}
+                  value={existingUserEmail}
+                  onChange={(e) => setExistingUserEmail(sanitizeInput(e.target.value, 255))}
                   placeholder="email@exemplo.com"
+                  className={formErrors.existingEmail ? 'border-red-500' : ''}
                 />
-              </div>
-              <div>
-                <Label htmlFor="new-admin-password">Senha</Label>
-                <Input
-                  id="new-admin-password"
-                  type="password"
-                  value={newAdminPassword}
-                  onChange={(e) => setNewAdminPassword(e.target.value)}
-                  placeholder="Senha segura"
-                />
+                {formErrors.existingEmail && <p className="text-sm text-red-500 mt-1">{formErrors.existingEmail}</p>}
                 <p className="text-sm text-muted-foreground mt-1">
-                  Mínimo 6 caracteres
+                  O usuário deve estar registrado no sistema
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button 
-                  onClick={createNewAdmin} 
-                  disabled={loading} 
-                  className="flex-1"
-                >
-                  {loading ? "Criando..." : "Criar Administrador"}
-                </Button>
-                <Button 
-                  onClick={() => {
-                    setShowCreateForm(false);
-                    setNewAdminEmail("");
-                    setNewAdminPassword("");
-                    setNewAdminName("");
-                  }} 
-                  variant="outline"
-                  disabled={loading}
-                >
-                  Cancelar
-                </Button>
-              </div>
+              <Button 
+                onClick={addExistingAdmin} 
+                disabled={loading} 
+                variant="outline"
+                className="w-full"
+              >
+                {loading ? "Promovendo..." : "Promover a Administrador"}
+              </Button>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 

@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_user_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       articles: {
         Row: {
           author: string
@@ -622,9 +649,21 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_admin_action: {
+        Args: {
+          action_type: string
+          target_user?: string
+          action_details?: Json
+        }
+        Returns: undefined
+      }
       sync_google_user_data: {
         Args: { _user_id: string; _metadata: Json }
         Returns: undefined
+      }
+      validate_password_strength: {
+        Args: { password_text: string }
+        Returns: boolean
       }
     }
     Enums: {
