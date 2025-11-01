@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_action_logs: {
+        Row: {
+          action: string
+          admin_id: string | null
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       articles: {
         Row: {
           author_id: string | null
@@ -331,7 +358,6 @@ export type Database = {
           id: string
           name: string
           plan: string | null
-          role: string | null
           streak_days: number | null
           total_hours: number | null
           updated_at: string | null
@@ -346,7 +372,6 @@ export type Database = {
           id: string
           name: string
           plan?: string | null
-          role?: string | null
           streak_days?: number | null
           total_hours?: number | null
           updated_at?: string | null
@@ -361,7 +386,6 @@ export type Database = {
           id?: string
           name?: string
           plan?: string | null
-          role?: string | null
           streak_days?: number | null
           total_hours?: number | null
           updated_at?: string | null
@@ -449,15 +473,125 @@ export type Database = {
           },
         ]
       }
+      user_badges: {
+        Row: {
+          badge_description: string | null
+          badge_title: string
+          badge_type: string
+          earned_at: string | null
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          badge_description?: string | null
+          badge_title: string
+          badge_type: string
+          earned_at?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          badge_description?: string | null
+          badge_title?: string
+          badge_type?: string
+          earned_at?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_certificates: {
+        Row: {
+          certificate_title: string
+          certificate_url: string | null
+          course_id: string | null
+          id: string
+          issued_at: string | null
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          certificate_title: string
+          certificate_url?: string | null
+          course_id?: string | null
+          id?: string
+          issued_at?: string | null
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          certificate_title?: string
+          certificate_url?: string | null
+          course_id?: string | null
+          id?: string
+          issued_at?: string | null
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_certificates_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_certificates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -584,6 +718,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
