@@ -27,13 +27,13 @@ export const useUserRole = () => {
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user role:', error);
         setUserRole('user'); // Default to user role
       } else {
-        setUserRole(data?.role || 'user');
+        setUserRole((data?.role as UserRole) || 'user');
       }
     } catch (error) {
       console.error('Error in fetchUserRole:', error);

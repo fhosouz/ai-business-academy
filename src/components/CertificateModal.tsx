@@ -5,7 +5,7 @@ import { Award, Download, Calendar } from "lucide-react";
 
 interface Certificate {
   id: string;
-  category_name: string;
+  certificate_title: string;
   issued_at: string;
   user_name: string;
 }
@@ -71,7 +71,7 @@ const CertificateModal = ({ isOpen, onClose, certificate }: CertificateModalProp
     // Course name
     ctx.fillStyle = '#1e40af';
     ctx.font = 'bold 24px Arial';
-    ctx.fillText(certificate.category_name, canvas.width / 2, 340);
+    ctx.fillText(certificate.certificate_title, canvas.width / 2, 340);
 
     // Date
     ctx.fillStyle = '#6b7280';
@@ -80,7 +80,7 @@ const CertificateModal = ({ isOpen, onClose, certificate }: CertificateModalProp
 
     // Download
     const link = document.createElement('a');
-    link.download = `certificado-${certificate.category_name}.png`;
+    link.download = `certificado-${certificate.certificate_title}.png`;
     link.href = canvas.toDataURL();
     link.click();
   };
@@ -118,7 +118,7 @@ const CertificateModal = ({ isOpen, onClose, certificate }: CertificateModalProp
             </p>
             
             <Badge className="text-lg px-4 py-2 bg-blue-600">
-              {certificate.category_name}
+              {certificate.certificate_title}
             </Badge>
             
             <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mt-6">

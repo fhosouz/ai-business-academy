@@ -9,15 +9,16 @@ import CertificateModal from "./CertificateModal";
 
 interface UserBadge {
   id: string;
-  category_id: number;
   badge_type: string;
+  badge_title: string;
+  badge_description: string | null;
   earned_at: string;
-  category_name: string;
 }
 
 interface Certificate {
   id: string;
-  category_name: string;
+  certificate_title: string;
+  course_id: string | null;
   issued_at: string;
   user_name: string;
 }
@@ -43,45 +44,24 @@ const BadgesDisplay = () => {
       // Fetch badges
       const { data: badgesData } = await supabase
         .from('user_badges')
-        .select(`
-          id,
-          category_id,
-          badge_type,
-          earned_at,
-          categories (
-            name
-          )
-        `)
+        .select('id, badge_type, badge_title, badge_description, earned_at')
         .eq('user_id', user.id)
         .order('earned_at', { ascending: false });
 
       // Fetch certificates
       const { data: certificatesData } = await supabase
         .from('user_certificates')
-        .select(`
-          id,
-          category_id,
-          issued_at,
-          categories (
-            name
-          )
-        `)
+        .select('id, certificate_title, course_id, issued_at')
         .eq('user_id', user.id)
         .order('issued_at', { ascending: false });
 
-      const badgesWithCategory = badgesData?.map(badge => ({
-        ...badge,
-        category_name: badge.categories?.name || 'Categoria Desconhecida'
-      })) || [];
-
-      const certificatesWithCategory = certificatesData?.map(cert => ({
+      const certificatesWithUserName = certificatesData?.map(cert => ({
         ...cert,
-        category_name: cert.categories?.name || 'Categoria Desconhecida',
         user_name: getUserDisplayName()
       })) || [];
 
-      setBadges(badgesWithCategory);
-      setCertificates(certificatesWithCategory);
+      setBadges(badgesData || []);
+      setCertificates(certificatesWithUserName);
     } catch (error) {
       console.error('Error fetching badges and certificates:', error);
     } finally {
@@ -152,9 +132,12 @@ const BadgesDisplay = () => {
                   <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
                     <Award className="w-6 h-6 text-white" />
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-sm">{badge.category_name}</h4>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm">{badge.badge_title}</h4>
+                    {badge.badge_description && (
+                      <p className="text-xs text-muted-foreground">{badge.badge_description}</p>
+                    )}
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                       <Calendar className="w-3 h-3" />
                       {formatDate(badge.earned_at)}
                     </div>
@@ -196,7 +179,7 @@ const BadgesDisplay = () => {
                           <Award className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                          <h4 className="font-semibold">{certificate.category_name}</h4>
+                          <h4 className="font-semibold">{certificate.certificate_title}</h4>
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Calendar className="w-3 h-3" />
                             {formatDate(certificate.issued_at)}

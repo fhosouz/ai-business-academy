@@ -94,11 +94,13 @@ const AdminManager = () => {
 
   const logAdminAction = async (action: string, targetUserId?: string, details?: any) => {
     try {
-      await supabase.rpc('log_admin_action', {
-        action_type: action,
-        target_user: targetUserId || null,
-        action_details: details ? JSON.stringify(details) : null
-      });
+      await supabase
+        .from('admin_action_logs')
+        .insert({
+          action: action,
+          target_user_id: targetUserId || null,
+          details: details || null
+        });
     } catch (error) {
       console.error('Failed to log admin action:', error);
     }
@@ -125,8 +127,8 @@ const AdminManager = () => {
       const userIds = adminRoles.map(role => role.user_id);
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, display_name')
-        .in('user_id', userIds);
+        .select('id, name')
+        .in('id', userIds);
 
       if (profilesError) throw profilesError;
 
@@ -138,12 +140,12 @@ const AdminManager = () => {
 
       // Combine the data
       const formattedUsers = adminRoles.map(role => {
-        const profile = profiles?.find(p => p.user_id === role.user_id);
+        const profile = profiles?.find(p => p.id === role.user_id);
         const authUser = authUsers && authUsers.users ? authUsers.users.find((u: any) => u.id === role.user_id) : null;
         return {
           id: role.user_id,
           email: authUser?.email || 'email@naodiponivel.com',
-          display_name: profile?.display_name || authUser?.user_metadata?.display_name || null,
+          display_name: profile?.name || authUser?.user_metadata?.display_name || null,
           role: role.role,
           created_at: new Date().toISOString()
         };
