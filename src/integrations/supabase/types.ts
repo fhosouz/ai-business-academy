@@ -7,668 +7,457 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
   public: {
     Tables: {
-      admin_audit_log: {
+      achievements: {
         Row: {
-          action: string
-          admin_user_id: string
           created_at: string | null
-          details: Json | null
+          description: string
+          icon: string
           id: string
-          target_user_id: string | null
+          requirement_value: number | null
+          title: string
+          type: string
         }
         Insert: {
-          action: string
-          admin_user_id: string
           created_at?: string | null
-          details?: Json | null
+          description: string
+          icon: string
           id?: string
-          target_user_id?: string | null
+          requirement_value?: number | null
+          title: string
+          type: string
         }
         Update: {
-          action?: string
-          admin_user_id?: string
           created_at?: string | null
-          details?: Json | null
+          description?: string
+          icon?: string
           id?: string
-          target_user_id?: string | null
+          requirement_value?: number | null
+          title?: string
+          type?: string
         }
         Relationships: []
       }
       articles: {
         Row: {
-          author: string
+          author_id: string | null
           category: string
           content: string
-          created_at: string
+          created_at: string | null
           excerpt: string
           id: string
-          image_url: string | null
-          is_active: boolean | null
           is_featured: boolean | null
+          likes: number | null
           published_at: string | null
+          read_time_minutes: number | null
+          thumbnail_url: string | null
           title: string
-          updated_at: string
+          updated_at: string | null
+          views: number | null
         }
         Insert: {
-          author: string
+          author_id?: string | null
           category: string
           content: string
-          created_at?: string
+          created_at?: string | null
           excerpt: string
           id?: string
-          image_url?: string | null
-          is_active?: boolean | null
           is_featured?: boolean | null
+          likes?: number | null
           published_at?: string | null
+          read_time_minutes?: number | null
+          thumbnail_url?: string | null
           title: string
-          updated_at?: string
+          updated_at?: string | null
+          views?: number | null
         }
         Update: {
-          author?: string
+          author_id?: string | null
           category?: string
           content?: string
-          created_at?: string
+          created_at?: string | null
           excerpt?: string
           id?: string
-          image_url?: string | null
-          is_active?: boolean | null
           is_featured?: boolean | null
+          likes?: number | null
           published_at?: string | null
+          read_time_minutes?: number | null
+          thumbnail_url?: string | null
           title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      categories: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: number
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: number
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: number
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      courses: {
-        Row: {
-          category_id: number
-          created_at: string
-          description: string | null
-          display_order: number | null
-          id: number
-          image_url: string | null
-          instructor: string | null
-          is_premium: boolean | null
-          status: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          category_id: number
-          created_at?: string
-          description?: string | null
-          display_order?: number | null
-          id?: number
-          image_url?: string | null
-          instructor?: string | null
-          is_premium?: boolean | null
-          status?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          category_id?: number
-          created_at?: string
-          description?: string | null
-          display_order?: number | null
-          id?: number
-          image_url?: string | null
-          instructor?: string | null
-          is_premium?: boolean | null
-          status?: string | null
-          title?: string
-          updated_at?: string
+          updated_at?: string | null
+          views?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "courses_category_id_fkey"
-            columns: ["category_id"]
+            foreignKeyName: "articles_author_id_fkey"
+            columns: ["author_id"]
             isOneToOne: false
-            referencedRelation: "categories"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
       }
-      customers: {
+      courses: {
         Row: {
-          created_at: string
-          customer_id: string | null
-          customer_name: string | null
-          id: number
-        }
-        Insert: {
-          created_at?: string
-          customer_id?: string | null
-          customer_name?: string | null
-          id?: number
-        }
-        Update: {
-          created_at?: string
-          customer_id?: string | null
-          customer_name?: string | null
-          id?: number
-        }
-        Relationships: []
-      }
-      lesson_ratings: {
-        Row: {
-          comment: string | null
-          created_at: string
+          category: string
+          created_at: string | null
+          description: string
+          duration_hours: number | null
           id: string
-          lesson_id: string
-          rating: number
-          updated_at: string
-          user_id: string
+          instructor_id: string | null
+          is_premium: boolean | null
+          is_published: boolean | null
+          level: string
+          price: number | null
+          rating: number | null
+          requirements: string[] | null
+          student_count: number | null
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string | null
+          what_you_will_learn: string[] | null
         }
         Insert: {
-          comment?: string | null
-          created_at?: string
+          category: string
+          created_at?: string | null
+          description: string
+          duration_hours?: number | null
           id?: string
-          lesson_id: string
-          rating: number
-          updated_at?: string
-          user_id: string
+          instructor_id?: string | null
+          is_premium?: boolean | null
+          is_published?: boolean | null
+          level: string
+          price?: number | null
+          rating?: number | null
+          requirements?: string[] | null
+          student_count?: number | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string | null
+          what_you_will_learn?: string[] | null
         }
         Update: {
-          comment?: string | null
-          created_at?: string
+          category?: string
+          created_at?: string | null
+          description?: string
+          duration_hours?: number | null
           id?: string
-          lesson_id?: string
-          rating?: number
-          updated_at?: string
-          user_id?: string
+          instructor_id?: string | null
+          is_premium?: boolean | null
+          is_published?: boolean | null
+          level?: string
+          price?: number | null
+          rating?: number | null
+          requirements?: string[] | null
+          student_count?: number | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string | null
+          what_you_will_learn?: string[] | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "courses_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enrollments: {
+        Row: {
+          completed_at: string | null
+          course_id: string | null
+          enrolled_at: string | null
+          id: string
+          progress_percentage: number | null
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          course_id?: string | null
+          enrolled_at?: string | null
+          id?: string
+          progress_percentage?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          course_id?: string | null
+          enrolled_at?: string | null
+          id?: string
+          progress_percentage?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_progress: {
+        Row: {
+          completed: boolean | null
+          created_at: string | null
+          id: string
+          lesson_id: string | null
+          notes: string | null
+          progress_percentage: number | null
+          updated_at: string | null
+          user_id: string | null
+          watched_duration: number | null
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string | null
+          id?: string
+          lesson_id?: string | null
+          notes?: string | null
+          progress_percentage?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          watched_duration?: number | null
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string | null
+          id?: string
+          lesson_id?: string | null
+          notes?: string | null
+          progress_percentage?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          watched_duration?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lessons: {
         Row: {
-          category_id: number
-          course_id: number
-          course_id_ref: number | null
-          created_at: string
+          course_id: string | null
+          created_at: string | null
           description: string | null
+          duration_minutes: number | null
           id: string
           is_free: boolean | null
           order_index: number
-          plan_type: Database["public"]["Enums"]["plan_type"] | null
+          resources: Json | null
           title: string
-          updated_at: string
-          video_duration: number | null
+          transcript: string | null
+          updated_at: string | null
           video_url: string | null
         }
         Insert: {
-          category_id: number
-          course_id: number
-          course_id_ref?: number | null
-          created_at?: string
+          course_id?: string | null
+          created_at?: string | null
           description?: string | null
+          duration_minutes?: number | null
           id?: string
           is_free?: boolean | null
-          order_index?: number
-          plan_type?: Database["public"]["Enums"]["plan_type"] | null
+          order_index: number
+          resources?: Json | null
           title: string
-          updated_at?: string
-          video_duration?: number | null
+          transcript?: string | null
+          updated_at?: string | null
           video_url?: string | null
         }
         Update: {
-          category_id?: number
-          course_id?: number
-          course_id_ref?: number | null
-          created_at?: string
+          course_id?: string | null
+          created_at?: string | null
           description?: string | null
+          duration_minutes?: number | null
           id?: string
           is_free?: boolean | null
           order_index?: number
-          plan_type?: Database["public"]["Enums"]["plan_type"] | null
+          resources?: Json | null
           title?: string
-          updated_at?: string
-          video_duration?: number | null
+          transcript?: string | null
+          updated_at?: string | null
           video_url?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "lessons_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lessons_course_id_ref_fkey"
-            columns: ["course_id_ref"]
+            foreignKeyName: "lessons_course_id_fkey"
+            columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
         ]
       }
-      notifications: {
-        Row: {
-          created_at: string
-          created_by: string
-          expires_at: string | null
-          id: string
-          is_active: boolean | null
-          message: string
-          target_audience: string | null
-          title: string
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          message: string
-          target_audience?: string | null
-          title: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          message?: string
-          target_audience?: string | null
-          title?: string
-        }
-        Relationships: []
-      }
-      page_analytics: {
-        Row: {
-          created_at: string
-          id: string
-          page_path: string
-          referrer: string | null
-          session_id: string | null
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          page_path: string
-          referrer?: string | null
-          session_id?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          page_path?: string
-          referrer?: string | null
-          session_id?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
-          address: string | null
           avatar_url: string | null
-          city: string | null
-          country: string | null
-          created_at: string
-          display_name: string | null
-          family_name: string | null
-          given_name: string | null
-          google_id: string | null
+          bio: string | null
+          certificates: number | null
+          completed_courses: number | null
+          created_at: string | null
+          email: string
           id: string
-          locale: string | null
-          phone: string | null
-          picture_url: string | null
-          postal_code: string | null
-          state: string | null
-          updated_at: string
-          user_id: string
+          name: string
+          plan: string | null
+          role: string | null
+          streak_days: number | null
+          total_hours: number | null
+          updated_at: string | null
         }
         Insert: {
-          address?: string | null
           avatar_url?: string | null
-          city?: string | null
-          country?: string | null
-          created_at?: string
-          display_name?: string | null
-          family_name?: string | null
-          given_name?: string | null
-          google_id?: string | null
-          id?: string
-          locale?: string | null
-          phone?: string | null
-          picture_url?: string | null
-          postal_code?: string | null
-          state?: string | null
-          updated_at?: string
-          user_id: string
+          bio?: string | null
+          certificates?: number | null
+          completed_courses?: number | null
+          created_at?: string | null
+          email: string
+          id: string
+          name: string
+          plan?: string | null
+          role?: string | null
+          streak_days?: number | null
+          total_hours?: number | null
+          updated_at?: string | null
         }
         Update: {
-          address?: string | null
           avatar_url?: string | null
-          city?: string | null
-          country?: string | null
-          created_at?: string
-          display_name?: string | null
-          family_name?: string | null
-          given_name?: string | null
-          google_id?: string | null
+          bio?: string | null
+          certificates?: number | null
+          completed_courses?: number | null
+          created_at?: string | null
+          email?: string
           id?: string
-          locale?: string | null
-          phone?: string | null
-          picture_url?: string | null
-          postal_code?: string | null
-          state?: string | null
-          updated_at?: string
-          user_id?: string
+          name?: string
+          plan?: string | null
+          role?: string | null
+          streak_days?: number | null
+          total_hours?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
-      user_badges: {
+      reviews: {
         Row: {
-          badge_type: string
-          category_id: number
-          created_at: string
-          earned_at: string
+          comment: string | null
+          course_id: string | null
+          created_at: string | null
           id: string
-          user_id: string
-        }
-        Insert: {
-          badge_type?: string
-          category_id: number
-          created_at?: string
-          earned_at?: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          badge_type?: string
-          category_id?: number
-          created_at?: string
-          earned_at?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_badges_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_certificates: {
-        Row: {
-          category_id: number
-          certificate_url: string | null
-          created_at: string
-          id: string
-          issued_at: string
-          user_id: string
-        }
-        Insert: {
-          category_id: number
-          certificate_url?: string | null
-          created_at?: string
-          id?: string
-          issued_at?: string
-          user_id: string
-        }
-        Update: {
-          category_id?: number
-          certificate_url?: string | null
-          created_at?: string
-          id?: string
-          issued_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_certificates_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_engagement: {
-        Row: {
-          created_at: string
-          event_data: Json | null
-          event_type: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          event_data?: Json | null
-          event_type: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          event_data?: Json | null
-          event_type?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_lesson_progress: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          id: string
-          lesson_id: string
-          started_at: string | null
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          lesson_id: string
-          started_at?: string | null
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          lesson_id?: string
-          started_at?: string | null
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_lesson_progress_lesson_id_fkey"
-            columns: ["lesson_id"]
-            isOneToOne: false
-            referencedRelation: "lessons"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_notifications: {
-        Row: {
-          id: string
-          notification_id: string
-          read_at: string | null
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          notification_id: string
-          read_at?: string | null
-          user_id: string
-        }
-        Update: {
-          id?: string
-          notification_id?: string
-          read_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_notifications_notification_id_fkey"
-            columns: ["notification_id"]
-            isOneToOne: false
-            referencedRelation: "notifications"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_roles: {
-        Row: {
-          created_at: string
-          id: string
-          plan_type: Database["public"]["Enums"]["plan_type"] | null
-          role: Database["public"]["Enums"]["app_role"]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          plan_type?: Database["public"]["Enums"]["plan_type"] | null
-          role: Database["public"]["Enums"]["app_role"]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          plan_type?: Database["public"]["Enums"]["plan_type"] | null
-          role?: Database["public"]["Enums"]["app_role"]
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_sessions: {
-        Row: {
-          duration_seconds: number | null
-          id: string
-          last_activity: string
-          pages_visited: number | null
-          session_id: string
-          started_at: string
+          rating: number | null
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          duration_seconds?: number | null
+          comment?: string | null
+          course_id?: string | null
+          created_at?: string | null
           id?: string
-          last_activity?: string
-          pages_visited?: number | null
-          session_id: string
-          started_at?: string
+          rating?: number | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          duration_seconds?: number | null
+          comment?: string | null
+          course_id?: string | null
+          created_at?: string | null
           id?: string
-          last_activity?: string
-          pages_visited?: number | null
-          session_id?: string
-          started_at?: string
+          rating?: number | null
+          updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string | null
+          earned_at: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          achievement_id?: string | null
+          earned_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          achievement_id?: string | null
+          earned_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      can_access_premium: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
-      get_analytics_data: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_category_progress: {
-        Args: { p_category_id: number; p_user_id: string }
-        Returns: number
-      }
-      get_course_progress: {
-        Args: { p_course_id: number; p_user_id: string }
-        Returns: number
-      }
-      get_user_plan: {
-        Args: { _user_id: string }
-        Returns: Database["public"]["Enums"]["plan_type"]
-      }
-      get_user_role: {
-        Args: { _user_id: string }
-        Returns: Database["public"]["Enums"]["app_role"]
-      }
-      has_role: {
-        Args: {
-          _user_id: string
-          _role: Database["public"]["Enums"]["app_role"]
-        }
-        Returns: boolean
-      }
-      log_admin_action: {
-        Args: {
-          action_type: string
-          target_user?: string
-          action_details?: Json
-        }
-        Returns: undefined
-      }
-      sync_google_user_data: {
-        Args: { _user_id: string; _metadata: Json }
-        Returns: undefined
-      }
-      validate_password_strength: {
-        Args: { password_text: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      app_role: "admin" | "user"
-      plan_type: "free" | "premium" | "enterprise"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -676,21 +465,25 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
@@ -708,14 +501,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
@@ -731,14 +526,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
@@ -754,14 +551,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
@@ -769,23 +568,22 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["admin", "user"],
-      plan_type: ["free", "premium", "enterprise"],
-    },
+    Enums: {},
   },
 } as const
