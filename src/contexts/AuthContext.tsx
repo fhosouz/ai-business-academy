@@ -89,34 +89,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogle = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/`
-        }
-      });
+      // Para o iframe do preview, vamos usar URL manual para escapar do iframe
+      const currentUrl = window.location.href;
+      const isInIframe = window !== window.top;
       
-      if (error) {
-        console.error('Error signing in with Google:', error);
+      if (isInIframe) {
+        // No preview, abre o Google OAuth em uma nova janela
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            skipBrowserRedirect: true
+          }
+        });
         
-        // Mensagens de erro mais específicas
-        let errorMessage = 'Não foi possível realizar a autenticação';
+        if (error) throw error;
         
-        if (error.message?.includes('provider is not enabled')) {
-          errorMessage = 'Login com Google não está habilitado. Entre em contato com o suporte.';
-        } else if (error.message?.includes('Invalid redirect URL')) {
-          errorMessage = 'Erro de configuração. Tente novamente em alguns instantes.';
-        } else if (error.message?.includes('access_denied')) {
-          errorMessage = 'Acesso negado. Você cancelou a autenticação.';
-        } else if (error.message?.includes('network')) {
-          errorMessage = 'Problema de conexão. Verifique sua internet e tente novamente.';
+        if (data?.url) {
+          // Abre em nova janela para escapar do iframe
+          window.open(data.url, '_blank');
+          return;
         }
+      } else {
+        // Comportamento normal fora do preview
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/`
+          }
+        });
         
-        throw new Error(errorMessage);
+        if (error) throw error;
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro inesperado ao fazer login';
-      throw new Error(message);
+      const error = err as any;
+      console.error('Error signing in with Google:', error);
+      
+      // Mensagens de erro mais específicas
+      let errorMessage = 'Não foi possível realizar a autenticação';
+      
+      if (error.message?.includes('provider is not enabled')) {
+        errorMessage = 'Login com Google não está habilitado. Entre em contato com o suporte.';
+      } else if (error.message?.includes('Invalid redirect URL')) {
+        errorMessage = 'Erro de configuração. Tente novamente em alguns instantes.';
+      } else if (error.message?.includes('access_denied')) {
+        errorMessage = 'Acesso negado. Você cancelou a autenticação.';
+      } else if (error.message?.includes('network')) {
+        errorMessage = 'Problema de conexão. Verifique sua internet e tente novamente.';
+      }
+      
+      throw new Error(errorMessage);
     }
   };
 
