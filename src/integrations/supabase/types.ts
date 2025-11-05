@@ -73,12 +73,14 @@ export type Database = {
       }
       articles: {
         Row: {
+          author: string | null
           author_id: string | null
           category: string
           content: string
           created_at: string | null
           excerpt: string
           id: string
+          is_active: boolean | null
           is_featured: boolean | null
           likes: number | null
           published_at: string | null
@@ -89,12 +91,14 @@ export type Database = {
           views: number | null
         }
         Insert: {
+          author?: string | null
           author_id?: string | null
           category: string
           content: string
           created_at?: string | null
           excerpt: string
           id?: string
+          is_active?: boolean | null
           is_featured?: boolean | null
           likes?: number | null
           published_at?: string | null
@@ -105,12 +109,14 @@ export type Database = {
           views?: number | null
         }
         Update: {
+          author?: string | null
           author_id?: string | null
           category?: string
           content?: string
           created_at?: string | null
           excerpt?: string
           id?: string
+          is_active?: boolean | null
           is_featured?: boolean | null
           likes?: number | null
           published_at?: string | null
@@ -130,13 +136,39 @@ export type Database = {
           },
         ]
       }
+      categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
-          category: string
+          category_id: string | null
           created_at: string | null
           description: string
           duration_hours: number | null
           id: string
+          image_url: string | null
+          instructor: string | null
           instructor_id: string | null
           is_premium: boolean | null
           is_published: boolean | null
@@ -144,6 +176,7 @@ export type Database = {
           price: number | null
           rating: number | null
           requirements: string[] | null
+          status: string | null
           student_count: number | null
           tags: string[] | null
           thumbnail_url: string | null
@@ -152,11 +185,13 @@ export type Database = {
           what_you_will_learn: string[] | null
         }
         Insert: {
-          category: string
+          category_id?: string | null
           created_at?: string | null
           description: string
           duration_hours?: number | null
           id?: string
+          image_url?: string | null
+          instructor?: string | null
           instructor_id?: string | null
           is_premium?: boolean | null
           is_published?: boolean | null
@@ -164,6 +199,7 @@ export type Database = {
           price?: number | null
           rating?: number | null
           requirements?: string[] | null
+          status?: string | null
           student_count?: number | null
           tags?: string[] | null
           thumbnail_url?: string | null
@@ -172,11 +208,13 @@ export type Database = {
           what_you_will_learn?: string[] | null
         }
         Update: {
-          category?: string
+          category_id?: string | null
           created_at?: string | null
           description?: string
           duration_hours?: number | null
           id?: string
+          image_url?: string | null
+          instructor?: string | null
           instructor_id?: string | null
           is_premium?: boolean | null
           is_published?: boolean | null
@@ -184,6 +222,7 @@ export type Database = {
           price?: number | null
           rating?: number | null
           requirements?: string[] | null
+          status?: string | null
           student_count?: number | null
           tags?: string[] | null
           thumbnail_url?: string | null
@@ -192,6 +231,13 @@ export type Database = {
           what_you_will_learn?: string[] | null
         }
         Relationships: [
+          {
+            foreignKeyName: "courses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "courses_instructor_id_fkey"
             columns: ["instructor_id"]
@@ -296,6 +342,7 @@ export type Database = {
       }
       lessons: {
         Row: {
+          category_id: string | null
           course_id: string | null
           created_at: string | null
           description: string | null
@@ -310,6 +357,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          category_id?: string | null
           course_id?: string | null
           created_at?: string | null
           description?: string | null
@@ -324,6 +372,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          category_id?: string | null
           course_id?: string | null
           created_at?: string | null
           description?: string | null
@@ -338,6 +387,13 @@ export type Database = {
           video_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "lessons_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lessons_course_id_fkey"
             columns: ["course_id"]
@@ -556,6 +612,57 @@ export type Database = {
           },
         ]
       }
+      user_lesson_progress: {
+        Row: {
+          course_id: string | null
+          created_at: string | null
+          id: string
+          last_watched_position: number | null
+          lesson_id: string | null
+          progress_percentage: number | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_watched_position?: number | null
+          lesson_id?: string | null
+          progress_percentage?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_watched_position?: number | null
+          lesson_id?: string | null
+          progress_percentage?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_lesson_progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_lesson_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -582,6 +689,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_category_progress: {
+        Args: { category_id: string; user_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

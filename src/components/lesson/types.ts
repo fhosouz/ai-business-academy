@@ -3,19 +3,25 @@ export interface Lesson {
   title: string;
   description: string;
   video_url?: string;
-  video_duration?: number;
+  duration_minutes?: number;
   order_index: number;
   is_free: boolean;
-  course_id: number;
-  category_id: number;
+  course_id: string;
+  category_id: string;
   categories?: {
-    id: number;
+    id: string;
     name: string;
   };
 }
 
 export interface Category {
-  id: number;
+  id: string;
   name: string;
   description: string;
+}
+
+export interface Course {
+  id: string;
+  title: string;
+  category_id: string;
 }

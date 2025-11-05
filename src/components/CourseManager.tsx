@@ -15,23 +15,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface Course {
-  id: number;
+  id: string;
   title: string;
   description: string;
-  category_id: number;
+  category_id: string;
   instructor: string;
   image_url: string;
   is_premium: boolean;
   status: string;
   created_at: string;
   categories?: {
-    id: number;
+    id: string;
     name: string;
   };
 }
 
 interface Category {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -49,7 +49,8 @@ const CourseManager = () => {
     instructor: "",
     image_url: "",
     is_premium: false,
-    status: "published"
+    status: "draft",
+    level: "Iniciante"
   });
   const { toast } = useToast();
 
@@ -107,7 +108,8 @@ const CourseManager = () => {
       instructor: "",
       image_url: "",
       is_premium: false,
-      status: "published"
+      status: "draft",
+      level: "Iniciante"
     });
     setEditingCourse(null);
   };
@@ -117,11 +119,12 @@ const CourseManager = () => {
     setFormData({
       title: course.title,
       description: course.description || "",
-      category_id: course.category_id.toString(),
+      category_id: course.category_id,
       instructor: course.instructor || "",
       image_url: course.image_url || "",
       is_premium: course.is_premium,
-      status: course.status
+      status: course.status,
+      level: "Iniciante"
     });
     setShowCreateDialog(true);
   };
@@ -141,11 +144,12 @@ const CourseManager = () => {
       const courseData = {
         title: formData.title,
         description: formData.description,
-        category_id: parseInt(formData.category_id),
+        category_id: formData.category_id,
         instructor: formData.instructor,
         image_url: formData.image_url,
         is_premium: formData.is_premium,
-        status: formData.status
+        is_published: formData.status === 'published',
+        level: formData.level
       };
 
       if (editingCourse) {
@@ -186,7 +190,7 @@ const CourseManager = () => {
     }
   };
 
-  const handleDelete = async (courseId: number) => {
+  const handleDelete = async (courseId: string) => {
     try {
       const { error } = await supabase
         .from('courses')
@@ -275,7 +279,7 @@ const CourseManager = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id.toString()}>
+                        <SelectItem key={category.id} value={category.id}>
                           {category.name}
                         </SelectItem>
                       ))}

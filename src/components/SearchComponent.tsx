@@ -13,9 +13,9 @@ interface SearchResult {
   description: string;
   type: 'lesson' | 'category';
   category_name?: string;
-  category_id?: number;
+  category_id?: string;
   order_index?: number;
-  video_duration?: number;
+  duration_minutes?: number;
 }
 
 interface SearchProps {
@@ -91,7 +91,7 @@ const SearchComponent = ({ onResultSelect }: SearchProps) => {
           category_name: lesson.categories?.name,
           category_id: lesson.category_id,
           order_index: lesson.order_index,
-          video_duration: lesson.video_duration,
+          duration_minutes: lesson.duration_minutes,
         })) || []),
       ];
 
@@ -194,10 +194,10 @@ const SearchComponent = ({ onResultSelect }: SearchProps) => {
                             </span>
                           )}
                           
-                          {result.video_duration && (
+                          {result.duration_minutes && (
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Clock className="w-3 h-3" />
-                              {Math.floor(result.video_duration / 60)}min
+                              {result.duration_minutes}min
                             </div>
                           )}
                           

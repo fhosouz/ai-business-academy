@@ -11,13 +11,13 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import VideoUpload from "../VideoUpload";
 interface Course {
-  id: number;
+  id: string;
   title: string;
-  category_id?: number;
+  category_id?: string;
 }
 
 interface LessonFormProps {
-  courseId: number;
+  courseId: string;
   courses: Course[];
   onLessonCreated: () => void;
   lessonsCount: number;

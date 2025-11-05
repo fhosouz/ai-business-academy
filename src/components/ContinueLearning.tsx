@@ -12,14 +12,14 @@ interface LessonWithProgress {
   title: string;
   description: string;
   category_name: string;
-  category_id: number;
+  category_id: string;
   order_index: number;
-  video_duration?: number;
+  duration_minutes?: number;
   status?: string;
 }
 
 interface ContinueLearningProps {
-  onLessonSelect: (categoryId: number, categoryName: string) => void;
+  onLessonSelect: (categoryId: string, categoryName: string) => void;
 }
 
 const ContinueLearning = ({ onLessonSelect }: ContinueLearningProps) => {
@@ -82,7 +82,7 @@ const ContinueLearning = ({ onLessonSelect }: ContinueLearningProps) => {
             title,
             description,
             order_index,
-            video_duration,
+            duration_minutes,
             category_id,
             categories (
               id,
@@ -163,10 +163,10 @@ const ContinueLearning = ({ onLessonSelect }: ContinueLearningProps) => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {lesson.video_duration && (
+              {lesson.duration_minutes && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Play className="w-4 h-4" />
-                  {Math.floor(lesson.video_duration / 60)}min
+                  {lesson.duration_minutes}min
                 </div>
               )}
               <Button 

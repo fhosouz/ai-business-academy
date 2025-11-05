@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserPlan } from "@/hooks/useUserPlan";
 
 interface Course {
-  id: number;
+  id: string;
   title: string;
   description: string;
   image_url?: string;
@@ -16,7 +16,7 @@ interface Course {
 }
 
 interface Category {
-  id: number;
+  id: string;
   name: string;
   description: string;
 }
@@ -27,7 +27,7 @@ interface CoursesByCategory {
 }
 
 interface CoursesByCategoryProps {
-  onCourseSelect: (courseId: number, courseName: string) => void;
+  onCourseSelect: (courseId: string, courseName: string) => void;
 }
 
 const CoursesByCategory = ({ onCourseSelect }: CoursesByCategoryProps) => {
@@ -54,12 +54,11 @@ const CoursesByCategory = ({ onCourseSelect }: CoursesByCategoryProps) => {
       const coursesByCategoryData: CoursesByCategory[] = [];
 
       for (const category of categories || []) {
-        const { data: courses, error: coursesError } = await supabase
+        const { data: courses, error: coursesError} = await supabase
           .from('courses')
           .select('*')
           .eq('category_id', category.id)
-          .eq('status', 'published')
-          .order('display_order')
+          .eq('is_published', true)
           .order('created_at');
 
         if (coursesError) throw coursesError;

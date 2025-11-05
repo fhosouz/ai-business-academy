@@ -35,13 +35,16 @@ const TrendsSection = () => {
     try {
       const { data, error } = await supabase
         .from('articles')
-        .select('*')
+        .select('id, title, excerpt, content, category, author, published_at, thumbnail_url')
         .eq('is_active', true)
         .order('published_at', { ascending: false })
         .limit(6);
 
       if (error) throw error;
-      setArticles(data || []);
+      setArticles((data || []).map(article => ({
+        ...article,
+        image_url: article.thumbnail_url || ''
+      })));
     } catch (error) {
       console.error('Error fetching articles:', error);
       toast({

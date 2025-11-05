@@ -6,18 +6,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Category {
-  id: number;
+  id: string;
   name: string;
   description: string;
 }
 
 interface CategoryProgress {
-  [categoryId: number]: number;
+  [categoryId: string]: number;
 }
 
 interface CategoryGridProps {
   categories: Category[];
-  onCategorySelect: (categoryId: number, categoryName: string) => void;
+  onCategorySelect: (categoryId: string, categoryName: string) => void;
 }
 
 const CategoryGrid = ({ categories, onCategorySelect }: CategoryGridProps) => {
@@ -39,8 +39,8 @@ const CategoryGrid = ({ categories, onCategorySelect }: CategoryGridProps) => {
     try {
       const progressPromises = categories.map(async (category) => {
         const { data } = await supabase.rpc('get_category_progress', {
-          p_category_id: category.id,
-          p_user_id: user.id
+          category_id: category.id,
+          user_id: user.id
         });
         return { categoryId: category.id, progress: data || 0 };
       });

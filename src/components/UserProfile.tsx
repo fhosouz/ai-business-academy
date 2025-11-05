@@ -44,34 +44,24 @@ const UserProfile = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
 
       if (data) {
         setProfile({
-          display_name: data.display_name || getUserDisplayName(),
-          avatar_url: data.avatar_url || data.picture_url || user?.user_metadata?.picture || "",
-          bio: "",
+          display_name: data.name || getUserDisplayName(),
+          avatar_url: data.avatar_url || user?.user_metadata?.picture || "",
+          bio: data.bio || "",
           location: "",
           website: "",
         });
       } else {
-        // Create profile if doesn't exist
-        const displayName = getUserDisplayName();
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            user_id: user.id,
-            display_name: displayName,
-          });
-
-        if (insertError) throw insertError;
-
+        // Profile should already exist from trigger
         setProfile({
-          display_name: displayName,
-          avatar_url: "",
+          display_name: getUserDisplayName(),
+          avatar_url: user?.user_metadata?.picture || "",
           bio: "",
           location: "",
           website: "",
