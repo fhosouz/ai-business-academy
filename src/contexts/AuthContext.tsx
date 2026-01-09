@@ -57,11 +57,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 
                 if (error) {
                   console.error('Error in sync_google_user_data:', error);
+                  // Não quebra a aplicação se a função não existir
+                  if (error.code === 'PGRST202') {
+                    console.log('=== Função sync_google_user_data não encontrada, ignorando sincronização ===');
+                  } else {
+                    console.log('Erro diferente de função não encontrada, pode ser problema de permissão');
+                  }
                 } else {
                   console.log('Dados do usuário sincronizados com sucesso');
                 }
               } catch (error) {
                 console.error('Erro ao sincronizar dados do usuário:', error);
+                // Não quebra a aplicação mesmo que falhe a sincronização
               }
             }
           }, 100);

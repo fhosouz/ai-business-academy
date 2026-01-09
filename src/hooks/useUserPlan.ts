@@ -24,11 +24,19 @@ export const useUserPlan = () => {
           .eq('user_id', user.id)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          // Fallback: considerar como free se Supabase falhar
+          console.log('=== FALLBACK: Setando plano como FREE devido a erro Supabase ===');
+          setPlan('free');
+          setLoading(false);
+          return;
+        }
         
-        setPlan(data?.plan_type || 'free');
+        setPlan((data as any)?.plan_type || 'free');
       } catch (error) {
         console.error('Error fetching user plan:', error);
+        // Fallback: considerar como free se houver erro
         setPlan('free');
       } finally {
         setLoading(false);
