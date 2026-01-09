@@ -18,6 +18,11 @@ interface PremiumUpgradeModalProps {
 }
 
 const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModalProps) => {
+  console.log('=== PREMIUM MODAL RENDER ===');
+  console.log('isOpen:', isOpen);
+  console.log('courseName:', courseName);
+  console.log('Componente montado com sucesso');
+  
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -29,13 +34,17 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('=== MERCADO PAGO INIT ===');
     // Inicializar Mercado Pago assim que o componente montar
     initMercadoPago('APP_USR-e64fd1e7-a174-464f-bf6a-17c3d4f1072f');
+    console.log('Mercado Pago inicializado');
   }, []);
 
   const handleCheckout = async () => {
+    console.log('=== HANDLE CHECKOUT INICIADO ===');
     setIsLoading(true);
     try {
+      console.log('Enviando requisição para backend...');
       const response = await fetch('https://ai-business-academy-backend.onrender.com/api/mercadopago/checkout', {
         method: 'POST',
         headers: {
@@ -48,11 +57,13 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
         }),
       });
 
+      console.log('Response status:', response.status);
       const data = await response.json();
       console.log('Backend response:', data);
       
       // Sempre redirecionar direto para o checkout
       if (data.init_point) {
+        console.log('Redirecionando para:', data.init_point);
         window.location.href = data.init_point;
       } else {
         console.error('No init_point received:', data);
@@ -115,7 +126,12 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    console.log('=== MODAL FECHADO - NÃO RENDERIZAR ===');
+    return null;
+  }
+
+  console.log('=== RENDERIZANDO MODAL ABERTO ===');
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -172,6 +188,7 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
 
           {/* Payment Options */}
           <Tabs defaultValue="payment" className="w-full">
+            {console.log('=== RENDERIZANDO TABS ===')}
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="payment" className="flex items-center gap-2">
                 <CreditCard className="w-4 h-4" />
@@ -184,6 +201,7 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
             </TabsList>
 
             <TabsContent value="payment" className="space-y-4">
+              {console.log('=== RENDERIZANDO TAB PAGAMENTO ===')}
               <Card>
                 <CardContent className="p-6 text-center">
                   <div className="space-y-4">
@@ -218,6 +236,7 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
             </TabsContent>
 
             <TabsContent value="contact" className="space-y-4">
+              {console.log('=== RENDERIZANDO TAB CONTATO ===')}
               <Card>
                 <CardContent className="p-6">
                   <h3 className="font-semibold text-lg mb-4">

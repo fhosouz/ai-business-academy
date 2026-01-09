@@ -26,6 +26,7 @@ import { useIndexNavigation } from "@/hooks/useIndexNavigation";
 import { useAnalytics } from "@/hooks/useAnalytics";
 
 const Index = () => {
+  console.log('=== INDEX COMPONENT RENDER ===');
   const { isAdmin, loading: roleLoading } = useUserRole();
   const { userProgress } = useUserProgress();
   const { plan, canAccessPremium } = useUserPlan();
@@ -33,6 +34,12 @@ const Index = () => {
   const { trackEvent } = useAnalytics();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<string>("");
+  
+  console.log('=== INDEX STATE ===');
+  console.log('plan:', plan);
+  console.log('canAccessPremium:', canAccessPremium);
+  console.log('showPremiumModal:', showPremiumModal);
+  console.log('selectedCourse:', selectedCourse);
   
   const {
     activeTab,
