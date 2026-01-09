@@ -13,5 +13,20 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+  },
+  global: {
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_PUBLISHABLE_KEY
+    }
+  },
+  db: {
+    schema: 'public'
   }
 });
+
+// Debug para monitorar configurações
+console.log('=== SUPABASE CLIENT CONFIG ===');
+console.log('URL:', SUPABASE_URL);
+console.log('Headers configurados');
