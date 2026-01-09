@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
+import { initMercadoPago } from '@mercadopago/sdk-react';
 
 const PremiumUpgradeModal = ({ isOpen, onClose, courseName }) => {
-  const [preferenceId, setPreferenceId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (preferenceId) {
-      initMercadoPago('APP_USR-e64fd1e7-a174-464f-bf6a-17c3d4f1072f');
-    }
-  }, [preferenceId]);
+    // Inicializar Mercado Pago assim que o componente montar
+    initMercadoPago('APP_USR-e64fd1e7-a174-464f-bf6a-17c3d4f1072f');
+  }, []);
 
   const handleCheckout = async () => {
     setIsLoading(true);
@@ -29,11 +27,11 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }) => {
       const data = await response.json();
       console.log('Backend response:', data);
       
+      // Sempre redirecionar direto para o checkout
       if (data.init_point) {
-        // Redirecionar diretamente para o checkout do Mercado Pago
         window.location.href = data.init_point;
-      } else if (data.preference_id) {
-        setPreferenceId(data.preference_id);
+      } else {
+        console.error('No init_point received:', data);
       }
     } catch (error) {
       console.error('Error creating checkout:', error);
@@ -71,9 +69,7 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }) => {
       React.createElement('p', null, `Desbloqueie o curso "${courseName}" e todos os outros cursos premium.`),
       React.createElement('p', null, 'Por apenas R$ 99,90/mês'),
       
-      preferenceId ? React.createElement(Wallet, {
-        initialization: { preferenceId: preferenceId }
-      }) : React.createElement('button', {
+      React.createElement('button', {
         onClick: handleCheckout,
         disabled: isLoading,
         style: {
