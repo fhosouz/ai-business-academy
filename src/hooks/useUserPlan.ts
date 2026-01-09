@@ -31,9 +31,32 @@ export const useUserPlan = () => {
 
         if (error) {
           console.error('Supabase error:', error);
-          // Fallback: considerar como free se Supabase falhar
-          console.log('=== FALLBACK: Setando plano como FREE devido a erro Supabase ===');
-          setPlan('free');
+          
+          // Se usuário não existe em user_roles, criar automaticamente
+          if (error.code === 'PGRST116') {
+            console.log('=== USUÁRIO NÃO EXISTE EM USER_ROLES, CRIANDO AUTOMATICAMENTE ===');
+            
+            const { data: insertData, error: insertError } = await supabase
+              .from('user_roles')
+              .insert({
+                user_id: user.id,
+                role: 'user' // Usuários novos são 'free' por padrão
+              })
+              .select()
+              .single();
+
+            if (insertError) {
+              console.error('Erro ao criar user_role:', insertError);
+              setPlan('free');
+            } else {
+              console.log('User role criado com sucesso:', insertData);
+              setPlan('free'); // role 'user' = plan 'free'
+            }
+          } else {
+            console.log('=== FALLBACK: Setando plano como FREE devido a erro Supabase ===');
+            setPlan('free');
+          }
+          
           setLoading(false);
           return;
         }
