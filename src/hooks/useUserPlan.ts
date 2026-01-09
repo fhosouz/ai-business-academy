@@ -52,6 +52,13 @@ export const useUserPlan = () => {
               console.log('User role criado com sucesso:', insertData);
               setPlan('free'); // role 'user' = plan 'free'
             }
+          } else if (error.code === '406' || error.message?.includes('Not Acceptable')) {
+            console.log('=== ERRO DE CORS/RLS, TENTANDO NOVAMENTE ===');
+            // Tentar novamente com um pequeno delay
+            setTimeout(() => {
+              fetchUserPlan();
+            }, 1000);
+            return;
           } else {
             console.log('=== FALLBACK: Setando plano como FREE devido a erro Supabase ===');
             setPlan('free');
