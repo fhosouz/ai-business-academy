@@ -18,11 +18,16 @@ export const useUserPlan = () => {
       }
 
       try {
+        // TEMPORÁRIO: Usar 'role' em vez de 'plan_type' que não existe
         const { data, error } = await supabase
           .from('user_roles')
-          .select('plan_type')
+          .select('role')
           .eq('user_id', user.id)
           .single();
+
+        console.log('=== USER ROLES QUERY ===');
+        console.log('data:', data);
+        console.log('error:', error);
 
         if (error) {
           console.error('Supabase error:', error);
@@ -33,7 +38,20 @@ export const useUserPlan = () => {
           return;
         }
         
-        setPlan((data as any)?.plan_type || 'free');
+        // TEMPORÁRIO: Mapear role para plan_type
+        const roleToPlan: Record<string, PlanType> = {
+          'admin': 'premium',
+          'user': 'free',
+          'premium': 'premium',
+          'enterprise': 'enterprise'
+        };
+        
+        const userPlan = roleToPlan[data?.role || 'user'] || 'free';
+        console.log('=== MAPEAMENTO ROLE → PLAN ===');
+        console.log('role:', data?.role);
+        console.log('plan:', userPlan);
+        
+        setPlan(userPlan);
       } catch (error) {
         console.error('Error fetching user plan:', error);
         // Fallback: considerar como free se houver erro
