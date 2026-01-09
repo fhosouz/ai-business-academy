@@ -60,8 +60,15 @@ const Index = () => {
   const handleCourseSelectWithTracking = (courseId: number, courseName: string) => {
     const course = courses.find(c => c.id === courseId);
     
+    console.log('=== DEBUG PREMIUM MODAL ===');
+    console.log('Course:', course);
+    console.log('Course is_premium:', course?.is_premium);
+    console.log('Can access premium:', canAccessPremium);
+    console.log('User plan:', plan);
+    
     // Check if course is premium and user has free plan
     if (course?.is_premium && !canAccessPremium) {
+      console.log('=== ABRINDO MODAL PREMIUM ===');
       setSelectedCourse(courseName);
       setShowPremiumModal(true);
       trackEvent('premium_course_blocked', { course_id: courseId, course_name: courseName });
@@ -76,8 +83,18 @@ const Index = () => {
     const isCourseFree = selectedCourseData ? !selectedCourseData.is_premium : false;
     const canAccess = isCourseFree || lesson.is_free || canAccessPremium;
     
+    console.log('=== DEBUG PREMIUM MODAL LESSON ===');
+    console.log('Lesson:', lesson);
+    console.log('Lesson is_free:', lesson.is_free);
+    console.log('Selected course data:', selectedCourseData);
+    console.log('Is course free:', isCourseFree);
+    console.log('Can access:', canAccess);
+    console.log('Can access premium:', canAccessPremium);
+    console.log('User plan:', plan);
+    
     // Check if lesson is premium and user has free plan
     if (!canAccess) {
+      console.log('=== ABRINDO MODAL PREMIUM LESSON ===');
       setSelectedCourse(lesson.title);
       setShowPremiumModal(true);
       trackEvent('premium_lesson_blocked', { lesson_id: lesson.id, lesson_name: lesson.title });
@@ -216,6 +233,13 @@ const Index = () => {
         onClose={() => setShowPremiumModal(false)}
         courseName={selectedCourse}
       />
+      
+      {/* Debug Modal State - Remover em produção */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{ position: 'fixed', bottom: 10, right: 10, background: 'black', color: 'white', padding: '10px', fontSize: '12px' }}>
+          Modal: {showPremiumModal ? 'OPEN' : 'CLOSED'} | Plan: {plan} | CanAccess: {canAccessPremium ? 'YES' : 'NO'}
+        </div>
+      )}
       </div>
     </ProtectedRoute>
   );
