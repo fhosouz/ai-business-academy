@@ -144,22 +144,48 @@ const Login = () => {
   };
 
   useEffect(() => {
+    console.log('=== LOGIN PAGE USEEFFECT TRIGGERED ===');
+    console.log('User exists:', !!user);
+    console.log('Loading state:', loading);
+    console.log('Current pathname:', window.location.pathname);
+    console.log('Current URL:', window.location.href);
+    console.log('User object:', user);
+    console.log('User ID:', user?.id);
+    console.log('User email:', user?.email);
+    console.log('Timestamp:', new Date().toISOString());
+    
     // Apenas redirecionar se user existe E não estamos na página de login
     if (user && !loading && window.location.pathname === '/login') {
-      console.log('Login: User authenticated, redirecting to home');
-      navigate('/');
+      console.log('=== LOGIN PAGE REDIRECTING TO HOME ===');
+      console.log('User ID:', user.id);
+      console.log('User email:', user.email);
+      console.log('Redirecting to: /');
+      console.log('Navigation function called');
+      
+      // Forçar redirecionamento com replace
+      navigate('/', { replace: true });
+      
+      console.log('Navigation called, waiting for redirect...');
+    } else {
+      console.log('=== LOGIN PAGE NOT REDIRECTING ===');
+      console.log('Reason:', user ? 'Still loading' : 'No user found');
+      console.log('User exists:', !!user);
+      console.log('Loading:', loading);
+      console.log('Pathname:', window.location.pathname);
     }
     
     const urlParams = new URLSearchParams(window.location.search);
     const message = urlParams.get('message');
     
     if (message === 'confirmed') {
+      console.log('=== EMAIL CONFIRMATION MESSAGE FOUND ===');
       toast({
         title: "✅ Email confirmado com sucesso!",
         description: "Sua conta foi ativada! Agora você pode fazer login com seu email e senha para acessar a AutomatizeAI Academy.",
       });
       
       window.history.replaceState({}, '', '/login');
+      console.log('URL cleaned from confirmation message');
     }
   }, [user, loading, navigate, toast]);
 
