@@ -43,7 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('User metadata:', user.user_metadata);
           console.log('App metadata:', user.app_metadata);
           
-          // Pequeno delay para evitar problemas de timing
+          // Pequeno delay para garantir que dados do banco estejam prontos
           setTimeout(async () => {
             // Sincronizar dados para qualquer login (não apenas Google)
             if (user.user_metadata && Object.keys(user.user_metadata).length > 0) {
@@ -71,7 +71,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // Não quebra a aplicação mesmo que falhe a sincronização
               }
             }
-          }, 100);
+            
+            // Verificar se usuário tem dados completos após sincronização
+            try {
+              const { data: profile, error: profileError } = await supabase
+                .from('user_profiles')
+                .select('*')
+                .eq('user_id', user.id)
+                .single();
+                
+              if (profileError) {
+                console.error('Erro ao verificar perfil:', profileError);
+              } else if (profile) {
+                console.log('Perfil verificado com sucesso:', profile);
+                // Forçar atualização do estado para garantir redirecionamento
+                setUser(session?.user ?? null);
+                setLoading(false);
+              }
+            } catch (error) {
+              console.error('Erro ao verificar perfil do usuário:', error);
+            }
+          }, 200); // Aumentado para 200ms
         }
       }
     );

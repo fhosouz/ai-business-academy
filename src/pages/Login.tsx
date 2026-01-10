@@ -144,7 +144,9 @@ const Login = () => {
   };
 
   useEffect(() => {
-    if (user && !loading) {
+    // Apenas redirecionar se user existe E não estamos na página de login
+    if (user && !loading && window.location.pathname === '/login') {
+      console.log('Login: User authenticated, redirecting to home');
       navigate('/');
     }
     

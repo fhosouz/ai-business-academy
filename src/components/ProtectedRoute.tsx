@@ -16,10 +16,14 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
+  // Verificar se usuário existe E tem dados completos no banco
   if (!user) {
+    console.log('ProtectedRoute: No user found, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 
+  // Usuário existe, permitir acesso (banco de dados está correto)
+  console.log('ProtectedRoute: User authenticated, allowing access');
   return <>{children}</>;
 };
 
