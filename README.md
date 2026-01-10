@@ -2,17 +2,12 @@
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/d564f8b6-4cdb-4e49-a3e3-9c1fb21cfc5e
+**URL**: https://automatizeai-academy.netlify.app
 
 ## How can I edit this code?
 
 There are several ways of editing your application.
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/d564f8b6-4cdb-4e49-a3e3-9c1fb21cfc5e) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
 
 **Use your preferred IDE**
 
