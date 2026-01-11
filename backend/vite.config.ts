@@ -20,13 +20,23 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
-    // Configuração simplificada - sem variáveis de ambiente
+    // Forçar cache busting para evitar bundle antigo
     build: {
       rollupOptions: {
         output: {
+          // Forçar nome diferente do bundle
+          entryFileNames: `assets/[name]-[hash].js`,
+          chunkFileNames: `assets/[name]-[hash].js`,
+          assetFileNames: `assets/[name]-[hash].[ext]`,
           manualChunks: undefined,
         },
       },
+      // Forçar limpeza de cache
+      minify: 'terser',
+    },
+    // Forçar versão no bundle
+    define: {
+      __APP_VERSION__: JSON.stringify(`v${Date.now()}`),
     },
   };
 });
