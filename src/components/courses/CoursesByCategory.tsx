@@ -42,6 +42,8 @@ const CoursesByCategory = ({ onCourseSelect }: CoursesByCategoryProps) => {
 
   const fetchCoursesByCategory = async () => {
     try {
+      console.log('=== FETCHING COURSES BY CATEGORY ===');
+      
       // Buscar categorias ordenadas por ID
       const { data: categories, error: categoriesError } = await supabase
         .from('categories')
@@ -49,20 +51,26 @@ const CoursesByCategory = ({ onCourseSelect }: CoursesByCategoryProps) => {
         .order('id');
 
       if (categoriesError) throw categoriesError;
-
+      
+      console.log('Categories found:', categories?.length || 0);
+      
       // Buscar cursos para cada categoria
       const coursesByCategoryData: CoursesByCategory[] = [];
 
       for (const category of categories || []) {
-        const { data: courses, error: coursesError} = await supabase
+        console.log(`=== Fetching courses for category: ${category.name} (ID: ${category.id}) ===`);
+        
+        const { data: courses, error: coursesError } = await supabase
           .from('courses')
           .select('*')
           .eq('category_id', category.id)
-          .eq('is_published', true)
+          .eq('status', 'published')
           .order('created_at');
 
         if (coursesError) throw coursesError;
-
+        
+        console.log(`Courses found for ${category.name}:`, courses?.length || 0);
+        
         if (courses && courses.length > 0) {
           coursesByCategoryData.push({
             category,
@@ -70,6 +78,12 @@ const CoursesByCategory = ({ onCourseSelect }: CoursesByCategoryProps) => {
           });
         }
       }
+
+      console.log('=== FINAL COURSES BY CATEGORY ===');
+      console.log('Total categories with courses:', coursesByCategoryData.length);
+      coursesByCategoryData.forEach(({ category, courses }) => {
+        console.log(`Category: ${category.name} - Courses: ${courses.length}`);
+      });
 
       setCoursesByCategory(coursesByCategoryData);
     } catch (error) {
