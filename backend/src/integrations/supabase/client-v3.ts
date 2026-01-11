@@ -1,9 +1,35 @@
 // ========================================
-// SUPABASE CLIENT V3 - VERSÃO FINAL OTIMIZADA
+// SUPABASE CLIENT V3 - VERSÃO FINAL OTIMIZADA COM VALIDAÇÃO
 // ========================================
 
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
+
+// Validação crítica de variáveis de ambiente
+console.log('=== SUPABASE CLIENT V3 DEBUG START ===');
+console.log('import.meta.env:', import.meta.env);
+console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL ? '✅ FOUND' : '❌ MISSING');
+console.log('VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY ? '✅ FOUND' : '❌ MISSING');
+console.log('VITE_SUPABASE_SERVICE_ROLE_KEY:', import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY ? '✅ FOUND' : '❌ MISSING');
+
+// Validar variáveis críticas
+const requiredVars = [
+  'VITE_SUPABASE_URL',
+  'VITE_SUPABASE_ANON_KEY'
+];
+
+const missingVars = requiredVars.filter(varName => !import.meta.env[varName]);
+
+if (missingVars.length > 0) {
+  console.error('=== SUPABASE CLIENT V3 ERROR ===');
+  console.error('Missing required environment variables:', missingVars.join(', '));
+  console.error('Available variables:', Object.keys(import.meta.env));
+  console.error('=== SUPABASE CLIENT V3 ERROR END ===');
+  throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+}
+
+console.log('=== SUPABASE CLIENT V3 DEBUG END ===');
+console.log('All required variables found!');
 
 // Configuração robusta e otimizada
 const supabaseConfig = {
