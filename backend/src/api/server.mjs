@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 
 // Importar rotas (CommonJS modules)
 import authRoutesModule from './routes/auth.routes.js';
