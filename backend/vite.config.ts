@@ -31,7 +31,13 @@ export default defineConfig(({ mode }) => {
     },
     // Forçar exposição de variáveis de ambiente
     envPrefix: 'VITE_',
+    // Forçar substituição manual das variáveis
     define: {
+      // Substituir manualmente as variáveis críticas
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL || ''),
+      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY || ''),
+      'import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY': JSON.stringify(process.env.VITE_MERCADO_PAGO_PUBLIC_KEY || ''),
+      'import.meta.env.VITE_MERCADO_PAGO_CHECKOUT_URL': JSON.stringify(process.env.VITE_MERCADO_PAGO_CHECKOUT_URL || ''),
       // Debug para verificar variáveis
       __APP_ENV__: JSON.stringify(process.env),
     },
