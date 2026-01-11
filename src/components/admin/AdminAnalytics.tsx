@@ -79,14 +79,15 @@ const AdminAnalytics = () => {
 
       // Buscar dados reais de visualização de páginas com user_id
       const { data: pageViewsData } = await supabase
-        .from('page_analytics')
-        .select('page_path, user_id, created_at')
+        .from('user_analytics')
+        .select('event_data, user_id, created_at')
+        .eq('event_type', 'page_view')
         .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
       const pageViewsCount = pageViewsData?.reduce((acc, view) => {
-        let pageName = view.page_path;
+        let pageName = view.event_data?.page_path;
         // Mapear paths para nomes amigáveis
-        switch (view.page_path) {
+        switch (pageName) {
           case '/':
             pageName = 'Dashboard';
             break;
@@ -100,8 +101,8 @@ const AdminAnalytics = () => {
             pageName = 'Admin';
             break;
           default:
-            if (view.page_path.startsWith('/event/')) {
-              pageName = view.page_path.replace('/event/', '');
+            if (pageName?.startsWith('/event/')) {
+              pageName = pageName.replace('/event/', '');
             }
         }
         
@@ -214,9 +215,10 @@ const AdminAnalytics = () => {
                           planType === 'Admin' ? '/admin' : planType;
           
           const { data: pageUsers } = await supabase
-            .from('page_analytics')
+            .from('user_analytics')
             .select('user_id')
-            .eq('page_path', pagePath)
+            .eq('event_type', 'page_view')
+            .contains('event_data', { page_path: pagePath })
             .not('user_id', 'is', null);
           
           const pageUserIds = [...new Set(pageUsers?.map(p => p.user_id))];
@@ -260,9 +262,10 @@ const AdminAnalytics = () => {
                         planType === 'Admin' ? '/admin' : planType;
         
         const { data: accessData } = await supabase
-          .from('page_analytics')
+          .from('user_analytics')
           .select('user_id')
-          .eq('page_path', pagePath)
+          .eq('event_type', 'page_view')
+          .contains('event_data', { page_path: pagePath })
           .not('user_id', 'is', null);
         
         accessCounts = accessData?.reduce((acc, access) => {

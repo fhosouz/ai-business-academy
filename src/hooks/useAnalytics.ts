@@ -25,12 +25,16 @@ export const useAnalytics = () => {
     try {
       const sessionId = getSessionId();
       
-      await supabase.from('page_analytics').insert({
+      await supabase.from('user_analytics').insert({
         user_id: user?.id || null,
-        page_path: path,
-        session_id: sessionId,
-        user_agent: navigator.userAgent,
-        referrer: document.referrer || null
+        event_type: 'page_view',
+        event_data: {
+          page_path: path,
+          session_id: sessionId,
+          referrer: document.referrer || null
+        },
+        page_url: window.location.href,
+        user_agent: navigator.userAgent
       });
 
       console.log(`Page view tracked: ${path}`);
@@ -39,18 +43,18 @@ export const useAnalytics = () => {
     }
   }, [user]);
 
-  // Track user engagement events using page_analytics table temporarily
+  // Track user engagement events using user_analytics table
   const trackEvent = useCallback(async (eventType: string, eventData?: any) => {
     if (!user) return;
 
     try {
-      // Use page_analytics table with special path to track events
-      await supabase.from('page_analytics').insert({
+      // Use user_analytics table with proper event_type and event_data
+      await supabase.from('user_analytics').insert({
         user_id: user.id,
-        page_path: `/event/${eventType}`,
-        session_id: getSessionId(),
-        user_agent: JSON.stringify(eventData || {}),
-        referrer: eventType
+        event_type: eventType,
+        event_data: eventData || {},
+        page_url: window.location.href,
+        user_agent: navigator.userAgent
       });
 
       console.log(`Event tracked: ${eventType}`, eventData);

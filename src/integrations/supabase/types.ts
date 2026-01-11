@@ -663,6 +663,46 @@ export type Database = {
           },
         ]
       }
+      user_analytics: {
+        Row: {
+          id: string
+          user_id: string | null
+          event_type: string
+          event_data: Json | null
+          page_url: string | null
+          user_agent: string | null
+          ip_address: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          event_type: string
+          event_data?: Json | null
+          page_url?: string | null
+          user_agent?: string | null
+          ip_address?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          event_type?: string
+          event_data?: Json | null
+          page_url?: string | null
+          user_agent?: string | null
+          ip_address?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_analytics_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
