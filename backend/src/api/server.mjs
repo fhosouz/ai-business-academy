@@ -2,12 +2,19 @@ import express from 'express';
 import cors from 'cors';
 require('dotenv').config();
 
-// Importar rotas (ES modules)
-import { authRoutes } from './routes/auth.routes.js';
-import { coursesRoutes } from './routes/courses.routes.js';
-import { paymentsRoutes } from './routes/payments.routes.js';
-import { usersRoutes } from './routes/users.routes.js';
-import { healthRoutes } from './routes/health.routes.js';
+// Importar rotas (CommonJS modules)
+import authRoutesModule from './routes/auth.routes.js';
+import coursesRoutesModule from './routes/courses.routes.js';
+import paymentsRoutesModule from './routes/payments.routes.js';
+import usersRoutesModule from './routes/users.routes.js';
+import healthRoutesModule from './routes/health.routes.js';
+
+// Extrair rotas dos módulos
+const { authRoutes } = authRoutesModule;
+const { coursesRoutes } = coursesRoutesModule;
+const { paymentsRoutes } = paymentsRoutesModule;
+const { usersRoutes } = usersRoutesModule;
+const { healthRoutes } = healthRoutesModule;
 
 const app = express();
 const PORT = process.env.PORT || 3001;
