@@ -75,8 +75,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 
                 // Chamar função para sincronizar dados do usuário
                 const { error } = await supabase.rpc('sync_google_user_data', {
-                  _user_id: user.id,
-                  _metadata: user.user_metadata
+                  p_user_id: user.id,
+                  p_metadata: user.user_metadata
                 });
                 
                 if (error) {
@@ -245,7 +245,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (data?.url) {
           // Abre em nova janela para escapar do iframe
-          window.open(data.url, '_blank');
+          const authWindow = window.open(data.url, '_blank');
+          
+          // Verificar periodicamente se o usuário foi autenticado
+          const checkAuth = setInterval(async () => {
+            try {
+              const { data: { session } } = await supabase.auth.getSession();
+              if (session?.user) {
+                // Usuário autenticado, limpar intervalo e atualizar estado
+                clearInterval(checkAuth);
+                setSession(session);
+                setUser(session.user);
+                setLoading(false);
+                // Fechar a janela de autenticação se ainda estiver aberta
+                if (authWindow && !authWindow.closed) {
+                  authWindow.close();
+                }
+              }
+            } catch (error) {
+              console.error('Error checking auth status:', error);
+            }
+          }, 1000); // Verificar a cada 1 segundo
+          
+          // Parar de verificar após 5 minutos
+          setTimeout(() => {
+            clearInterval(checkAuth);
+          }, 300000);
+          
           return;
         }
       } else {
