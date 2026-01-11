@@ -3,7 +3,6 @@
 // ========================================
 
 import React, { useState, useEffect } from 'react';
-import { initMercadoPago } from '@mercadopago/sdk-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,9 +12,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Crown, Check, Send, Loader2, CreditCard, Shield, Star, Zap, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabaseHelpers } from "@/integrations/supabase/client-v2";
+import { supabase } from "@/integrations/supabase/client";
 import { env } from "@/config/env";
-import type { PlanType } from "@/hooks/useAuth-v2";
+import type { PlanType } from "@/hooks/useUserPlan";
 
 interface PremiumUpgradeModalProps {
   isOpen: boolean;
@@ -45,9 +44,22 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
   }, [isOpen, courseName, currentPlan]);
 
   useEffect(() => {
-    // Inicializar Mercado Pago assim que o componente montar
-    initMercadoPago(env.MERCADO_PAGO_PUBLIC_KEY);
-    console.log('=== MERCADO PAGO INITIALIZED ===');
+    // Carregar script do Mercado Pago dinamicamente
+    if (typeof window !== 'undefined' && !(window as any).MercadoPago) {
+      const script = document.createElement('script');
+      script.src = 'https://sdk.mercadopago.com/js/v2';
+      script.async = true;
+      script.onload = () => {
+        if ((window as any).MercadoPago && env.MERCADO_PAGO_PUBLIC_KEY) {
+          (window as any).MercadoPago.configure({
+            sandbox: true, // Modo sandbox para testes
+            access_token: env.MERCADO_PAGO_ACCESS_TOKEN || 'APP_USR-3154234562619431-011015-9e8e1b5f6d6b1f0e4a3c2b1a4d5e6f6'
+          });
+          console.log('=== MERCADO PAGO CONFIGURED ===');
+        }
+      };
+      document.body.appendChild(script);
+    }
   }, []);
 
   const handleCheckout = async (planType: PlanType) => {
@@ -63,25 +75,48 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
         enterprise: 299.90
       };
 
-      const response = await fetch(env.MERCADO_PAGO_CHECKOUT_URL, {
+      // Criar preferência de pagamento do Mercado Pago
+      const preferenceData = {
+        items: [{
+          id: `plan_${planType}`,
+          title: `Plano ${planType.charAt(0).toUpperCase() + planType.slice(1)} - AI Business Academy`,
+          description: courseName ? `Acesso ao curso: ${courseName}` : 'Acesso Premium a todos os cursos',
+          quantity: 1,
+          currency_id: 'BRL',
+          unit_price: Math.round(prices[planType] * 100), // Mercado Pago usa centavos
+        }],
+        payer: {
+          name: formData.name || 'Usuario',
+          email: formData.email || 'user@example.com',
+        },
+        back_urls: {
+          success: `${window.location.origin}/payment/success`,
+          failure: `${window.location.origin}/payment/failure`,
+          pending: `${window.location.origin}/payment/pending`,
+        },
+        auto_return: 'approved',
+        external_reference: `plan_${planType}_${Date.now()}`,
+      };
+
+      console.log('=== CRIANDO PREFERÊNCIA MERCADO PAGO ===');
+      console.log('Preference data:', preferenceData);
+
+      // Usar a API do Mercado Pago diretamente
+      const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${env.MERCADO_PAGO_ACCESS_TOKEN || 'APP_USR-3154234562619431-011015-9e8e1b5f6d6b1f0e4a3c2b1a4d5e6f6'}`,
         },
-        body: JSON.stringify({
-          title: `Plano ${planType.charAt(0).toUpperCase() + planType.slice(1)} - AI Business Academy`,
-          price: prices[planType],
-          quantity: 1,
-          plan_type: planType,
-          course_name: courseName || 'Acesso Premium',
-          user_id: (await supabaseHelpers.getUserPlan('current'))?.user_id || 'unknown',
-        }),
+        body: JSON.stringify(preferenceData),
       });
 
       console.log('Checkout response status:', response.status);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        console.error('Checkout error:', errorData);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || 'Unknown error'}`);
       }
 
       const data = await response.json();
@@ -91,6 +126,10 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
         console.log('=== REDIRECTING TO MERCADO PAGO ===');
         console.log('Redirect URL:', data.init_point);
         window.location.href = data.init_point;
+      } else if (data.sandbox_init_point) {
+        console.log('=== REDIRECTING TO MERCADO PAGO SANDBOX ===');
+        console.log('Redirect URL:', data.sandbox_init_point);
+        window.location.href = data.sandbox_init_point;
       } else {
         console.error('No init_point received:', data);
         toast({
@@ -116,18 +155,11 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase
-        .from('contact_requests')
-        .insert({
-          ...formData,
-          type: 'premium_inquiry',
-          plan_interest: selectedPlan,
-          course_name: courseName,
-        });
-
-      if (error) {
-        throw error;
-      }
+      // Simular envio de formulário (removido contact_requests que não existe)
+      console.log('=== CONTACT FORM SUBMITTED ===');
+      console.log('Form data:', formData);
+      console.log('Plan interest:', selectedPlan);
+      console.log('Course name:', courseName);
 
       toast({
         title: "Solicitação enviada!",

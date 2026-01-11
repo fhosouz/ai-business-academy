@@ -17,7 +17,7 @@ import UserProfile from "@/components/UserProfile";
 import WelcomeSection from "@/components/dashboard/WelcomeSection";
 import CoursesGrid from "@/components/dashboard/CoursesGrid";
 import AdminTabsContent from "@/components/admin/AdminTabsContent";
-import PremiumUpgradeModal from "@/components/PremiumUpgradeModal";
+import PremiumUpgradeModal from "@/components/PremiumUpgradeModal-v2";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserProgress } from "@/hooks/useUserProgress";
 import { useUserPlan } from "@/hooks/useUserPlan";
@@ -239,6 +239,7 @@ const Index = () => {
         isOpen={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
         courseName={selectedCourse}
+        currentPlan={plan}
       />
       
       {/* Debug Modal State - Remover em produção */}
