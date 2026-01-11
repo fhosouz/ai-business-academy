@@ -19,4 +19,4 @@ router.put('/:id/profile', (req, res) => {
   });
 });
 
-module.exports = { router };
+module.exports = router;

@@ -17,4 +17,4 @@ router.get('/featured', (req, res) => {
   });
 });
 
-module.exports = { router };
+module.exports = router;

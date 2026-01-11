@@ -47,4 +47,4 @@ router.post('/refresh', (req, res) => {
   });
 });
 
-module.exports = { router };
+module.exports = router;
