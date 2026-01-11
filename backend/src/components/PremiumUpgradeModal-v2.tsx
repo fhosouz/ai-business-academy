@@ -53,7 +53,6 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
         if ((window as any).MercadoPago && env.MERCADO_PAGO_PUBLIC_KEY) {
           (window as any).MercadoPago.configure({
             sandbox: true, // Modo sandbox para testes
-            access_token: env.MERCADO_PAGO_ACCESS_TOKEN || 'APP_USR-3154234562619431-011015-9e8e1b5f6d6b1f0e4a3c2b1a4d5e6f6'
           });
           console.log('=== MERCADO PAGO CONFIGURED ===');
         }
@@ -106,7 +105,6 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${env.MERCADO_PAGO_ACCESS_TOKEN || 'APP_USR-3154234562619431-011015-9e8e1b5f6d6b1f0e4a3c2b1a4d5e6f6'}`,
         },
         body: JSON.stringify(preferenceData),
       });

@@ -6,14 +6,11 @@ export const env = {
   // Supabase
   SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
   SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
-  SUPABASE_SERVICE_ROLE_KEY: import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
   
   // Mercado Pago
   MERCADO_PAGO_PUBLIC_KEY: import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY,
-  MERCADO_PAGO_ACCESS_TOKEN: import.meta.env.VITE_MERCADO_PAGO_ACCESS_TOKEN,
   
-  // Backend URLs
-  BACKEND_URL: import.meta.env.VITE_BACKEND_URL,
+  // Mercado Pago Checkout URL
   MERCADO_PAGO_CHECKOUT_URL: import.meta.env.VITE_MERCADO_PAGO_CHECKOUT_URL,
   
   // Analytics
