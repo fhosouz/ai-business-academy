@@ -3,18 +3,30 @@
 ## 🚀 Variáveis de Ambiente (Netlify Dashboard)
 
 ### 🔗 API Backend
-```
-VITE_API_URL=https://seu-backend.onrender.com/api
+```bash
+VITE_API_URL=https://ai-business-academy-api.onrender.com/api
 ```
 
-### 🎯 Opcionais (se quiser manter fallback)
-```
+### 🔐 Supabase (Frontend - Apenas URL)
+```bash
 VITE_SUPABASE_URL=https://mphzlbyaxddcyvagcerf.supabase.co
+VITE_SUPABASE_PROJECT_ID=mphzlbyaxddcyvagcerf
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1waHpsYnlheGRkY3l2YWdjZXJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NzU1MDIsImV4cCI6MjA3NzM1MTUwMn0.G-yYKMB5D_nImRkD65fbK4J_fjx7yX6uSxuOhPdymCk
+```
+
+### 🔑 Supabase ANON_KEY (Frontend - Apenas para leitura)
+```bash
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1waHpsYnlheGRkY3l2YWdjZXJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NzU1MDIsImV4cCI6MjA3NzM1MTUwMn0.G-yYKMB5D_nImRkD65fbK4J_fjx7yX6uSxuOhPdymCk
 ```
 
-## 📋 Build Command
+### 💳 Mercado Pago (Frontend)
+```bash
+VITE_MERCADO_PAGO_CHECKOUT_URL=https://api.mercadopago.com/checkout/preferences
+VITE_MERCADO_PAGO_PUBLIC_KEY=APP_USR-b9564790-a955-4d0b-8475-4770dc972a0d
 ```
+
+## 📋 Build Command
+```bash
 npm install
 npm run build
 ```
@@ -28,7 +40,7 @@ backend/dist
 ```toml
 [[redirects]]
   from = "/api/*"
-  to = "https://seu-backend.onrender.com/api/:splat"
+  to = "https://ai-business-academy-api.onrender.com/api/:splat"
   status = 200
   force = true
 
