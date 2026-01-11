@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "node src/api/server.js",
+    "server": "node src/api/server.cjs",
     "server:dev": "tsx watch src/api/app.ts",
     "server:build": "tsc src/api/app.ts --outDir dist --module commonjs --target es2020"
   },
