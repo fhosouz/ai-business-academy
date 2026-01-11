@@ -1,35 +1,21 @@
 // ========================================
-// SUPABASE CLIENT V3 - VERSÃO FINAL OTIMIZADA COM VALIDAÇÃO
+// SUPABASE CLIENT V3 - VERSÃO FINAL COM CONFIGURAÇÃO DIRETA
 // ========================================
 
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Validação crítica de variáveis de ambiente
-console.log('=== SUPABASE CLIENT V3 DEBUG START ===');
-console.log('import.meta.env:', import.meta.env);
-console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL ? '✅ FOUND' : '❌ MISSING');
-console.log('VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY ? '✅ FOUND' : '❌ MISSING');
-console.log('VITE_SUPABASE_SERVICE_ROLE_KEY:', import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY ? '✅ FOUND' : '❌ MISSING');
+// Configuração direta - sem variáveis de ambiente
+const SUPABASE_CONFIG = {
+  URL: "https://mphzlbyaxddcyvagcerf.supabase.co",
+  ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1waHpsYnlheGRkY3l2YWdjZXJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NzU1MDIsImV4cCI6MjA3NzM1MTUwMn0.G-yYKMB5D_nImRkD65fbK4J_fjx7yX6uSxuOhPdymCk"
+};
 
-// Validar variáveis críticas
-const requiredVars = [
-  'VITE_SUPABASE_URL',
-  'VITE_SUPABASE_ANON_KEY'
-];
-
-const missingVars = requiredVars.filter(varName => !import.meta.env[varName]);
-
-if (missingVars.length > 0) {
-  console.error('=== SUPABASE CLIENT V3 ERROR ===');
-  console.error('Missing required environment variables:', missingVars.join(', '));
-  console.error('Available variables:', Object.keys(import.meta.env));
-  console.error('=== SUPABASE CLIENT V3 ERROR END ===');
-  throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
-}
-
-console.log('=== SUPABASE CLIENT V3 DEBUG END ===');
-console.log('All required variables found!');
+// Log de configuração
+console.log('=== SUPABASE CLIENT V3 CONFIG DIRETA ===');
+console.log('URL:', SUPABASE_CONFIG.URL ? '✅ CONFIGURADO' : '❌ ERRO');
+console.log('ANON_KEY:', SUPABASE_CONFIG.ANON_KEY ? '✅ CONFIGURADO' : '❌ ERRO');
+console.log('=== SUPABASE CLIENT V3 CONFIG CONCLUÍDA ===');
 
 // Configuração robusta e otimizada
 const supabaseConfig = {
@@ -45,7 +31,7 @@ const supabaseConfig = {
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+      'apikey': SUPABASE_CONFIG.ANON_KEY,
     },
   },
   db: {
@@ -60,15 +46,15 @@ const supabaseConfig = {
 
 // Client principal
 export const supabase = createClient<Database>(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
+  SUPABASE_CONFIG.URL,
+  SUPABASE_CONFIG.ANON_KEY,
   supabaseConfig
 );
 
 // Client admin (para operações privilegiadas)
 export const supabaseAdmin = createClient<Database>(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_CONFIG.URL,
+  SUPABASE_CONFIG.ANON_KEY, // Usando ANON_KEY por enquanto
   {
     ...supabaseConfig,
     auth: {

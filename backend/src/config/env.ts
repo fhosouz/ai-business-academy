@@ -1,44 +1,28 @@
 // ========================================
-// CONFIGURAÇÃO AMBIENTAL SEGURA COM LOGS DETALHADOS
+// CONFIGURAÇÃO DIRETA - SEM VARIÁVEIS DE AMBIENTE
 // ========================================
 
-// Log detalhado para debug
-console.log('=== ENVIRONMENT DEBUG START ===');
-console.log('import.meta.env:', import.meta.env);
-console.log('Available VITE_ variables:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')));
+// Configuração direta das variáveis críticas
+const SUPABASE_CONFIG = {
+  URL: "https://mphzlbyaxddcyvagcerf.supabase.co",
+  ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1waHpsYnlheGRkY3l2YWdjZXJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NzU1MDIsImV4cCI6MjA3NzM1MTUwMn0.G-yYKMB5D_nImRkD65fbK4J_fjx7yX6uSxuOhPdymCk"
+};
+
+const MERCADO_PAGO_CONFIG = {
+  PUBLIC_KEY: "APP_USR-b9564790-a955-4d0b-8475-4770dc972a0d",
+  CHECKOUT_URL: "https://api.mercadopago.com/checkout/preferences"
+};
 
 export const env = {
-  // Supabase
-  SUPABASE_URL: (() => {
-    const value = import.meta.env.VITE_SUPABASE_URL;
-    console.log('VITE_SUPABASE_URL:', value ? '✅ FOUND' : '❌ MISSING');
-    console.log('VITE_SUPABASE_URL value:', value);
-    return value;
-  })(),
-  SUPABASE_ANON_KEY: (() => {
-    const value = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    console.log('VITE_SUPABASE_ANON_KEY:', value ? '✅ FOUND' : '❌ MISSING');
-    console.log('VITE_SUPABASE_ANON_KEY value:', value ? `${value.substring(0, 20)}...` : 'undefined');
-    return value;
-  })(),
+  // Supabase - configuração direta
+  SUPABASE_URL: SUPABASE_CONFIG.URL,
+  SUPABASE_ANON_KEY: SUPABASE_CONFIG.ANON_KEY,
   
-  // Mercado Pago
-  MERCADO_PAGO_PUBLIC_KEY: (() => {
-    const value = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY;
-    console.log('VITE_MERCADO_PAGO_PUBLIC_KEY:', value ? '✅ FOUND' : '❌ MISSING');
-    console.log('VITE_MERCADO_PAGO_PUBLIC_KEY value:', value);
-    return value;
-  })(),
+  // Mercado Pago - configuração direta
+  MERCADO_PAGO_PUBLIC_KEY: MERCADO_PAGO_CONFIG.PUBLIC_KEY,
+  MERCADO_PAGO_CHECKOUT_URL: MERCADO_PAGO_CONFIG.CHECKOUT_URL,
   
-  // Mercado Pago Checkout URL
-  MERCADO_PAGO_CHECKOUT_URL: (() => {
-    const value = import.meta.env.VITE_MERCADO_PAGO_CHECKOUT_URL;
-    console.log('VITE_MERCADO_PAGO_CHECKOUT_URL:', value ? '✅ FOUND' : '❌ MISSING');
-    console.log('VITE_MERCADO_PAGO_CHECKOUT_URL value:', value);
-    return value;
-  })(),
-  
-  // Analytics
+  // Analytics (opcional, pode ficar undefined)
   GOOGLE_ANALYTICS_ID: import.meta.env.VITE_GOOGLE_ANALYTICS_ID,
   
   // Flags
@@ -57,36 +41,13 @@ export const env = {
   SESSION_TIMEOUT: parseInt(import.meta.env.VITE_SESSION_TIMEOUT || '3600000'), // 1 hour
 } as const;
 
-// Validação de variáveis obrigatórias
-const requiredEnvVars = [
-  'VITE_SUPABASE_URL',
-  'VITE_SUPABASE_ANON_KEY',
-  'VITE_MERCADO_PAGO_PUBLIC_KEY',
-  'VITE_MERCADO_PAGO_CHECKOUT_URL'
-] as const;
-
-console.log('Required variables:', requiredEnvVars);
-console.log('Checking each required variable...');
-
-const missingVars = requiredEnvVars.filter(varName => {
-  const exists = !!import.meta.env[varName];
-  console.log(`${varName}: ${exists ? '✅ EXISTS' : '❌ MISSING'}`);
-  return !exists;
-});
-
-console.log('Missing variables:', missingVars);
-console.log('Missing variables count:', missingVars.length);
-
-if (missingVars.length > 0) {
-  console.error('=== ENVIRONMENT ERROR ===');
-  console.error('Missing required environment variables:', missingVars.join(', '));
-  console.error('Available environment variables:', Object.keys(import.meta.env));
-  console.error('=== ENVIRONMENT ERROR END ===');
-  throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
-}
-
-console.log('=== ENVIRONMENT DEBUG END ===');
-console.log('All required variables found successfully!');
+// Log de sucesso
+console.log('=== CONFIGURAÇÃO DIRETA CARREGADA ===');
+console.log('SUPABASE_URL:', SUPABASE_CONFIG.URL ? '✅ CONFIGURADO' : '❌ ERRO');
+console.log('SUPABASE_ANON_KEY:', SUPABASE_CONFIG.ANON_KEY ? '✅ CONFIGURADO' : '❌ ERRO');
+console.log('MERCADO_PAGO_PUBLIC_KEY:', MERCADO_PAGO_CONFIG.PUBLIC_KEY ? '✅ CONFIGURADO' : '❌ ERRO');
+console.log('MERCADO_PAGO_CHECKOUT_URL:', MERCADO_PAGO_CONFIG.CHECKOUT_URL ? '✅ CONFIGURADO' : '❌ ERRO');
+console.log('=== CONFIGURAÇÃO DIRETA CONCLUÍDA ===');
 
 // Type safety para environment
 export type Env = typeof env;
