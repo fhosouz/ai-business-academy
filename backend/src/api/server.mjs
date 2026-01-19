@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Importar rotas (CommonJS modules)
+// Importar rotas (ES modules)
 import authRoutes from './routes/auth.routes.js';
 import coursesRoutes from './routes/courses.routes.js';
 import paymentsRoutes from './routes/payments.routes.js';

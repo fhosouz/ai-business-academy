@@ -1,22 +1,37 @@
-const express = require('express');
+import express from 'express';
 
 const router = express.Router();
 
-// Rotas básicas de usuários (placeholder)
-router.get('/:id/profile', (req, res) => {
+// Get user profile
+router.get('/profile', (req, res) => {
+  // Placeholder - implementar lógica real depois
   res.json({
-    message: 'User profile - Coming soon',
+    message: 'Get user profile endpoint - placeholder',
+    data: {
+      id: 'user_123',
+      email: 'user@example.com',
+      fullName: 'User Name'
+    },
     status: 'implemented',
-    user_id: req.params.id
+    timestamp: new Date().toISOString()
   });
 });
 
-router.put('/:id/profile', (req, res) => {
+// Update user profile
+router.put('/profile', (req, res) => {
+  const { fullName, email } = req.body;
+  
+  // Placeholder - implementar lógica real depois
   res.json({
-    message: 'Update user profile - Coming soon',
+    message: 'Update user profile endpoint - placeholder',
+    data: {
+      id: 'user_123',
+      fullName,
+      email
+    },
     status: 'implemented',
-    user_id: req.params.id
+    timestamp: new Date().toISOString()
   });
 });
 
-module.exports = router;
+export default router;

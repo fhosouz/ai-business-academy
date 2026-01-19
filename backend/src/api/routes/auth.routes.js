@@ -1,4 +1,4 @@
-const express = require('express');
+import express from 'express';
 
 const router = express.Router();
 
@@ -8,9 +8,12 @@ router.post('/login', (req, res) => {
   
   // Placeholder - implementar lógica real depois
   res.json({
-    message: 'Login endpoint - Coming soon',
+    message: 'Login endpoint - placeholder',
+    data: {
+      email,
+      timestamp: new Date().toISOString()
+    },
     status: 'implemented',
-    email: email,
     timestamp: new Date().toISOString()
   });
 });
@@ -21,18 +24,22 @@ router.post('/register', (req, res) => {
   
   // Placeholder - implementar lógica real depois
   res.json({
-    message: 'Register endpoint - Coming soon',
+    message: 'Register endpoint - placeholder',
+    data: {
+      email,
+      fullName,
+      timestamp: new Date().toISOString()
+    },
     status: 'implemented',
-    email: email,
-    fullName: fullName,
     timestamp: new Date().toISOString()
   });
 });
 
 // Logout route
 router.post('/logout', (req, res) => {
+  // Placeholder - implementar lógica real depois
   res.json({
-    message: 'Logout endpoint - Coming soon',
+    message: 'Logout endpoint - placeholder',
     status: 'implemented',
     timestamp: new Date().toISOString()
   });
@@ -40,11 +47,12 @@ router.post('/logout', (req, res) => {
 
 // Refresh token route
 router.post('/refresh', (req, res) => {
+  // Placeholder - implementar lógica real depois
   res.json({
-    message: 'Refresh token endpoint - Coming soon',
+    message: 'Refresh token endpoint - placeholder',
     status: 'implemented',
     timestamp: new Date().toISOString()
   });
 });
 
-module.exports = router;
+export default router;

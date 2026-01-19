@@ -1,35 +1,33 @@
-const express = require('express');
+import express from 'express';
 
 const router = express.Router();
 
-// Health check
+// Basic health check
 router.get('/', (req, res) => {
   res.json({
-    status: 'ok',
+    message: 'Backend API is running',
+    status: 'healthy',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
-    version: '1.0.0'
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
-// Health check detalhado
+// Detailed health check
 router.get('/detailed', (req, res) => {
   res.json({
-    status: 'ok',
+    message: 'Backend API detailed health check',
+    status: 'healthy',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
     version: '1.0.0',
     services: {
       database: 'connected',
-      supabase: 'configured',
-      mercadopago: 'configured'
-    },
-    memory: process.memoryUsage(),
-    platform: process.platform,
-    nodeVersion: process.version
+      supabase: 'connected',
+      mercadopago: 'connected'
+    }
   });
 });
 
-module.exports = router;
+export default router;
