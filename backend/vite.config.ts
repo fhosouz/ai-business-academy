@@ -23,6 +23,9 @@ export default defineConfig(({ mode }) => {
     // Forçar cache busting para evitar bundle antigo
     build: {
       rollupOptions: {
+        input: {
+          main: path.resolve(__dirname, 'index.html'),
+        },
         output: {
           // Forçar nome diferente do bundle
           entryFileNames: `assets/[name]-[hash].js`,
