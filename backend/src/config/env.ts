@@ -14,7 +14,7 @@ export const env = {
   SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || SUPABASE_CONFIG.ANON_KEY,
   
   // API URL - variável do Netlify
-  VITE_API_URL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
+  VITE_API_URL: import.meta.env.VITE_API_URL || 'https://ai-business-academy-backend.onrender.com/api',
   
   // Analytics (opcional)
   GOOGLE_ANALYTICS_ID: import.meta.env.VITE_GOOGLE_ANALYTICS_ID,

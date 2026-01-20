@@ -16,11 +16,12 @@ const PORT = process.env.PORT || 3001;
 // CORS configurado para Netlify + desenvolvimento
 const corsOptions = {
   origin: [
-    process.env.FRONTEND_URL || 'https://ai-business-academy.netlify.app',
+    process.env.FRONTEND_URL || 'https://automatizeai-academy.netlify.app',
     'http://localhost:5173',
     'https://localhost:5173',
-    'https://ai-business-academy.netlify.app',
-    'https://*.netlify.app'
+    'https://automatizeai-academy.netlify.app',
+    'https://*.netlify.app',
+    'https://ai-business-academy.netlify.app' // URL alternativa
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
