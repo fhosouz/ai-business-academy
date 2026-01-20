@@ -98,9 +98,9 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
       console.log('Backend response data:', data);
       
       // Redirecionar para URL do Mercado Pago retornada pelo backend
-      if (data.data?.initPoint || data.data?.sandboxInitPoint) {
+      if (data.data?.init_point || data.data?.sandbox_init_point) {
         console.log('=== REDIRECTING TO MERCADO PAGO ===');
-        const redirectUrl = data.data.initPoint || data.data.sandboxInitPoint;
+        const redirectUrl = data.data.init_point || data.data.sandbox_init_point;
         console.log('Redirect URL:', redirectUrl);
         window.location.href = redirectUrl;
       } else {

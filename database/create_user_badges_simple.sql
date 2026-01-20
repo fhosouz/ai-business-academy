@@ -92,62 +92,30 @@ INSERT INTO public.achievements (title, description, icon, badge_type, points) V
 ON CONFLICT DO NOTHING;
 
 -- ========================================
--- 7. VERIFICAÇÃO FINAL
+-- 7. VERIFICAÇÃO FINAL - SIMPLIFICADA
 -- ========================================
 
--- Verificar se as tabelas foram criadas
+-- Verificar se achievements foi criada
 SELECT 
-    'VERIFICAÇÃO FINAL achievements' as etapa,
-    table_name,
-    table_schema,
+    'VERIFICAÇÃO achievements' as etapa,
     CASE 
-        WHEN table_name IS NOT NULL THEN 'TABELA achievements CRIADA ✓'
+        WHEN EXISTS (
+            SELECT 1 FROM information_schema.tables 
+            WHERE table_name = 'achievements' AND table_schema = 'public'
+        ) THEN 'TABELA achievements CRIADA ✓'
         ELSE 'ERRO: TABELA NÃO FOI CRIADA ✗'
-    END as status
-FROM information_schema.tables 
-WHERE table_name = 'achievements'
-AND table_schema = 'public'
+    END as status;
 
-UNION ALL
-
+-- Verificar se user_badges foi criada
 SELECT 
-    'VERIFICAÇÃO FINAL user_badges' as etapa,
-    table_name,
-    table_schema,
+    'VERIFICAÇÃO user_badges' as etapa,
     CASE 
-        WHEN table_name IS NOT NULL THEN 'TABELA user_badges CRIADA ✓'
+        WHEN EXISTS (
+            SELECT 1 FROM information_schema.tables 
+            WHERE table_name = 'user_badges' AND table_schema = 'public'
+        ) THEN 'TABELA user_badges CRIADA ✓'
         ELSE 'ERRO: TABELA NÃO FOI CRIADA ✗'
-    END as status
-FROM information_schema.tables 
-WHERE table_name = 'user_badges'
-AND table_schema = 'public';
-
--- Verificar estrutura das tabelas
-SELECT 
-    'ESTRUTURA achievements' as etapa,
-    column_name,
-    data_type,
-    is_nullable,
-    column_default,
-    ordinal_position
-FROM information_schema.columns 
-WHERE table_name = 'achievements'
-AND table_schema = 'public'
-ORDER BY ordinal_position
-
-UNION ALL
-
-SELECT 
-    'ESTRUTURA user_badges' as etapa,
-    column_name,
-    data_type,
-    is_nullable,
-    column_default,
-    ordinal_position
-FROM information_schema.columns 
-WHERE table_name = 'user_badges'
-AND table_schema = 'public'
-ORDER BY ordinal_position;
+    END as status;
 
 -- ========================================
 -- 8. CONCLUSÃO
