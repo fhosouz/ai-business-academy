@@ -30,10 +30,10 @@ router.post('/create-preference', async (req, res) => {
     console.log('Course:', courseName);
     console.log('Payer:', payerInfo);
     
-    // Preços dos planos - EM CENTAVOS DIRETOS
+    // Preços dos planos - EM REAIS (DECIMAL)
     const prices = {
-      premium: 100,      // R$ 1,00 = 100 centavos
-      enterprise: 100    // R$ 1,00 = 100 centavos
+      premium: 1.00,      // R$ 1,00 em reais
+      enterprise: 1.00    // R$ 1,00 em reais
     };
 
     // Criar preferência de pagamento do Mercado Pago
@@ -44,7 +44,7 @@ router.post('/create-preference', async (req, res) => {
         description: courseName ? `Acesso ao curso: ${courseName}` : 'Acesso Premium a todos os cursos',
         quantity: 1,
         currency_id: 'BRL',
-        unit_price: prices[planType], // Valor já em centavos diretos
+        unit_price: prices[planType], // Valor em reais (decimal)
         category_id: 'services', // Categoria de serviço (recomendado)
       }],
       payer: {
