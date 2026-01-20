@@ -1,9 +1,9 @@
 import express from 'express';
-import mercadopago from 'mercadopago';
+import { MercadoPagoConfig, Preference } from 'mercadopago';
 
-// Configurar SDK do Mercado Pago
-mercadopago.configure({
-  access_token: process.env.MERCADOPAGO_ACCESS_TOKEN
+// Configurar SDK do Mercado Pago para ES modules
+const client = new MercadoPagoConfig({ 
+  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN 
 });
 
 const router = express.Router();
@@ -72,16 +72,19 @@ router.post('/create-preference', async (req, res) => {
       });
     }
 
-    // Criar preferência de pagamento usando SDK oficial
-    const preference = await mercadopago.preferences.create(preferenceData);
-    console.log('Mercado Pago SDK response:', preference);
+    // Criar preferência de pagamento usando SDK oficial (ES modules)
+    const preference = new Preference(client);
+    const result = await preference.create({
+      body: preferenceData
+    });
+    console.log('Mercado Pago SDK response:', result);
     
     res.json({
       message: 'Payment preference created successfully',
       data: {
-        preferenceId: preference.id,
-        initPoint: preference.init_point,
-        sandboxInitPoint: preference.sandbox_init_point
+        preferenceId: result.id,
+        initPoint: result.init_point,
+        sandboxInitPoint: result.sandbox_init_point
       }
     });
   } catch (error) {
