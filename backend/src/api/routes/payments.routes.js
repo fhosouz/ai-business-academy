@@ -25,10 +25,10 @@ router.post('/create-preference', async (req, res) => {
     console.log('Course:', courseName);
     console.log('Payer:', payerInfo);
     
-    // Preços dos planos
+    // Preços dos planos - EM CENTAVOS DIRETOS
     const prices = {
-      premium: 1.00,
-      enterprise: 1.00
+      premium: 100,      // R$ 1,00 = 100 centavos
+      enterprise: 100    // R$ 1,00 = 100 centavos
     };
 
     // Criar preferência de pagamento do Mercado Pago
@@ -39,13 +39,16 @@ router.post('/create-preference', async (req, res) => {
         description: courseName ? `Acesso ao curso: ${courseName}` : 'Acesso Premium a todos os cursos',
         quantity: 1,
         currency_id: 'BRL',
-        unit_price: Math.round(prices[planType] * 100), // Mercado Pago usa centavos - R$ 1,00 = 100 centavos
+        unit_price: prices[planType], // Valor já em centavos diretos
         category_id: 'services', // Categoria de serviço (recomendado)
       }],
       payer: {
         name: payerInfo?.name || 'Usuario',
         email: payerInfo?.email || 'user@example.com',
-        // identification removido - opcional e pode ser adicionado depois
+        identification: {
+          type: 'CPF',
+          number: '12345678909' // CPF genérico para testes
+        }
       },
       back_urls: {
         success: returnUrl || `${process.env.FRONTEND_URL}/payment/success`,
@@ -63,7 +66,8 @@ router.post('/create-preference', async (req, res) => {
         installments: 12 // Máximo de parcelas
       },
       statement_descriptor: 'AutomatizeAI Academy', // Nome na fatura
-      binary_mode: false // Permite pagamento parcelado
+      binary_mode: false, // Permite pagamento parcelado
+      purpose: 'wallet_purchase' // Modo wallet para melhor UX
     };
 
     // Verificar se temos as credenciais do Mercado Pago
