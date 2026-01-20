@@ -13,6 +13,11 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Verificar configuração do Supabase
+console.log('=== SUPABASE CONFIG ===');
+console.log('URL:', process.env.SUPABASE_URL);
+console.log('Service Role Key:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Configured' : 'NOT CONFIGURED');
+
 const router = express.Router();
 
 // Create payment preference
@@ -44,11 +49,8 @@ router.post('/create-preference', async (req, res) => {
       }],
       payer: {
         name: payerInfo?.name || 'Usuario',
-        email: payerInfo?.email || 'user@example.com',
-        identification: {
-          type: 'CPF',
-          number: '12345678909' // CPF genérico para testes
-        }
+        email: payerInfo?.email || 'user@example.com'
+        // identification removido - CPF genérico pode bloquear botão
       },
       back_urls: {
         success: returnUrl || `${process.env.FRONTEND_URL}/payment/success`,

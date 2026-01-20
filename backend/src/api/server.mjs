@@ -18,9 +18,6 @@ const PORT = process.env.PORT || 3001;
 const corsOptions = {
   origin: [
     process.env.FRONTEND_URL || 'https://automatizeai-academy.netlify.app',
-    'http://localhost:5173',
-    'https://localhost:5173',
-    'https://automatizeai-academy.netlify.app',
     'https://ai-business-academy.netlify.app' // URL alternativa
   ],
   credentials: false, // Desabilitar credentials para evitar erro com wildcard
