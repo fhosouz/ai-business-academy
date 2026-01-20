@@ -29,7 +29,6 @@ router.post('/create-preference', async (req, res) => {
     console.log('Plan:', planType);
     console.log('Course:', courseName);
     console.log('Payer:', payerInfo);
-    console.log('User ID:', req.user?.id); // Log ID do usuário autenticado
     
     // Preços dos planos - EM REAIS (DECIMAL)
     const prices = {
@@ -37,44 +36,27 @@ router.post('/create-preference', async (req, res) => {
       enterprise: 1.00    // R$ 1,00 em reais
     };
 
-    // Dados do usuário logado (priorizar dados reais)
-    const userData = {
-      name: payerInfo?.name || req.user?.user_metadata?.full_name || req.user?.email?.split('@')[0] || 'Usuario',
-      surname: payerInfo?.surname || req.user?.user_metadata?.surname || '',
-      email: payerInfo?.email || req.user?.email || 'user@example.com',
-      identification: {
-        type: 'CPF',
-        number: req.user?.user_metadata?.cpf || ''
-      }
-    };
-
-    console.log('=== USER DATA FROM AUTH ===');
-    console.log('Auth User:', req.user);
-    console.log('User Email:', req.user?.email);
-    console.log('User Metadata:', req.user?.user_metadata);
-    console.log('Final Payer Data:', userData);
-
     // Criar preferência de pagamento do Mercado Pago
-    console.log('=== MERCADO PAGO PREFERENCE DATA ===');
-    console.log('Prices:', prices);
-    console.log('Plan Type:', planType);
-    console.log('Unit Price:', prices[planType]);
-    console.log('Payer:', payerInfo);
-    
     const preferenceData = {
+      items: [{
         id: `plan_${planType}`,
         title: `Plano ${planType.charAt(0).toUpperCase() + planType.slice(1)} - AutomatizeAI Academy`,
         description: courseName ? `Acesso ao curso: ${courseName}` : 'Acesso Premium a todos os cursos',
         quantity: 1,
         currency_id: 'BRL',
         unit_price: prices[planType], // Valor em reais (decimal)
-        category_id: 'services', // Categoria de serviço (recomendado)
+        category_id: 'services' // Categoria de serviço (recomendado)
       }],
-      payer: userData,
+      payer: {
+        name: payerInfo?.name || 'Usuario Teste',
+        surname: 'Silva', // Sobrenome para validação
+        email: payerInfo?.email || 'user@example.com'
+        // identification removido - CPF genérico pode bloquear botão
+      },
       back_urls: {
         success: returnUrl || `${process.env.FRONTEND_URL}/payment/success`,
         failure: failureUrl || `${process.env.FRONTEND_URL}/payment/failure`,
-        pending: `${process.env.FRONTEND_URL}/payment/pending`,
+        pending: `${process.env.FRONTEND_URL}/payment/pending`
       },
       auto_return: 'approved',
       external_reference: `plan_${planType}_${Math.floor(Date.now() / 1000)}`,
@@ -91,6 +73,13 @@ router.post('/create-preference', async (req, res) => {
       purpose: 'wallet_purchase' // Modo wallet para melhor UX
     };
 
+    console.log('=== MERCADO PAGO PREFERENCE DATA ===');
+    console.log('Prices:', prices);
+    console.log('Plan Type:', planType);
+    console.log('Unit Price:', prices[planType]);
+    console.log('Payer:', payerInfo);
+    console.log('Full Preference Data:', JSON.stringify(preferenceData, null, 2));
+
     // Verificar se temos as credenciais do Mercado Pago
     if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
       console.error('Mercado Pago access token not configured');
@@ -105,22 +94,17 @@ router.post('/create-preference', async (req, res) => {
     }
 
     // Criar preferência de pagamento usando SDK oficial (ES modules)
-    console.log('Prices:', prices);
-    console.log('Plan Type:', planType);
-    console.log('Unit Price:', prices[planType]);
-    console.log('Full Preference Data:', JSON.stringify(preferenceData, null, 2));
-    
     const preference = new Preference(client);
     const result = await preference.create({
       body: preferenceData
     });
-    
+
     console.log('=== MERCADO PAGO SDK RESPONSE ===');
     console.log('Full Response:', JSON.stringify(result, null, 2));
     console.log('Preference ID:', result.id);
     console.log('Items:', result.items);
     console.log('Item Unit Price:', result.items?.[0]?.unit_price);
-    
+
     // Registrar pagamento inicial no banco de dados
     try {
       const { data: paymentRecord, error: paymentError } = await supabase
@@ -136,7 +120,7 @@ router.post('/create-preference', async (req, res) => {
         })
         .select()
         .single();
-      
+
       if (paymentError) {
         console.error('Error recording payment:', paymentError);
       } else {
@@ -145,7 +129,7 @@ router.post('/create-preference', async (req, res) => {
     } catch (dbError) {
       console.error('Database error recording payment:', dbError);
     }
-    
+
     res.json({
       message: 'Payment preference created successfully',
       data: {

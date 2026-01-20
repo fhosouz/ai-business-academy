@@ -192,7 +192,7 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="payment" className="flex items-center gap-2">
                 <CreditCard className="w-4 h-4" />
-                Pagamento Imediato
+                Comece agora
               </TabsTrigger>
               <TabsTrigger value="contact" className="flex items-center gap-2">
                 <Send className="w-4 h-4" />
