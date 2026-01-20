@@ -9,6 +9,7 @@ import coursesRoutes from './routes/courses.routes.js';
 import paymentsRoutes from './routes/payments.routes.js';
 import usersRoutes from './routes/users.routes.js';
 import healthRoutes from './routes/health.routes.js';
+import mercadopagoRoutes from './routes/mercadopago.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -49,6 +50,7 @@ app.use('/api/courses', coursesRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api/mercadopago', mercadopagoRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

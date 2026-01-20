@@ -18,43 +18,46 @@ export const useUserPlan = () => {
       }
 
       try {
-        // TEMPORÁRIO: Usar 'role' em vez de 'plan_type' que não existe
+        // Buscar plano do usuário na tabela user_plans
         const { data, error } = await supabase
-          .from('user_roles')
-          .select('role')
+          .from('user_plans')
+          .select('plan_type, status, current_period_end')
           .eq('user_id', user.id)
+          .eq('status', 'active')
           .single();
 
-        console.log('=== USER ROLES QUERY ===');
+        console.log('=== USER PLAN QUERY ===');
         console.log('data:', data);
         console.log('error:', error);
 
         if (error) {
           console.error('Supabase error:', error);
           
-          // Se usuário não existe em user_roles, criar automaticamente
+          // Se usuário não tem plano ativo, criar como free
           if (error.code === 'PGRST116') {
-            console.log('=== USUÁRIO NÃO EXISTE EM USER_ROLES, CRIANDO AUTOMATICAMENTE ===');
+            console.log('=== USUÁRIO NÃO TEM PLANO, CRIANDO COMO FREE ===');
             
             const { data: insertData, error: insertError } = await supabase
-              .from('user_roles')
+              .from('user_plans')
               .insert({
                 user_id: user.id,
-                role: 'user' // Usuários novos são 'free' por padrão
+                plan_type: 'free',
+                status: 'active',
+                current_period_end: null,
+                updated_at: new Date().toISOString()
               })
               .select()
               .single();
 
             if (insertError) {
-              console.error('Erro ao criar user_role:', insertError);
+              console.error('Erro ao criar plano free:', insertError);
               setPlan('free');
             } else {
-              console.log('User role criado com sucesso:', insertData);
-              setPlan('free'); // role 'user' = plan 'free'
+              console.log('Plano free criado com sucesso:', insertData);
+              setPlan('free');
             }
           } else if (error.code === '406' || error.message?.includes('Not Acceptable')) {
             console.log('=== ERRO DE CORS/RLS, TENTANDO NOVAMENTE ===');
-            // Tentar novamente com um pequeno delay
             setTimeout(() => {
               fetchUserPlan();
             }, 1000);
@@ -68,20 +71,22 @@ export const useUserPlan = () => {
           return;
         }
         
-        // TEMPORÁRIO: Mapear role para plan_type
-        const roleToPlan: Record<string, PlanType> = {
-          'admin': 'premium',
-          'user': 'free',
-          'premium': 'premium',
-          'enterprise': 'enterprise'
-        };
+        // Verificar se o plano ainda está válido
+        const now = new Date();
+        const periodEnd = data.current_period_end ? new Date(data.current_period_end) : null;
         
-        const userPlan = roleToPlan[data?.role || 'user'] || 'free';
-        console.log('=== MAPEAMENTO ROLE → PLAN ===');
-        console.log('role:', data?.role);
-        console.log('plan:', userPlan);
-        
-        setPlan(userPlan);
+        if (periodEnd && periodEnd < now) {
+          console.log('=== PLANO EXPIRADO, SETANDO COMO FREE ===');
+          setPlan('free');
+        } else {
+          const userPlan = data.plan_type as PlanType;
+          console.log('=== PLANO ENCONTRADO ===');
+          console.log('plan_type:', userPlan);
+          console.log('status:', data.status);
+          console.log('current_period_end:', data.current_period_end);
+          
+          setPlan(userPlan);
+        }
       } catch (error) {
         console.error('Error fetching user plan:', error);
         // Fallback: considerar como free se houver erro
