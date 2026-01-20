@@ -71,7 +71,7 @@ const PlanUpgrade = () => {
         'Relatórios avançados',
         'API personalizada'
       ],
-      price: 'R$ 99,90',
+      price: 'R$ 1,00',
       period: '/mês',
       current: plan === 'enterprise'
     }

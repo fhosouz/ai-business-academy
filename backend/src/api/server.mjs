@@ -21,12 +21,11 @@ const corsOptions = {
     'http://localhost:5173',
     'https://localhost:5173',
     'https://automatizeai-academy.netlify.app',
-    'https://*.netlify.app',
     'https://ai-business-academy.netlify.app' // URL alternativa
   ],
-  credentials: true,
+  credentials: false, // Desabilitar credentials para evitar erro com wildcard
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 200,
 };
 

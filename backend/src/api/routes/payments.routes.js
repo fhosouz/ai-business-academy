@@ -39,7 +39,7 @@ router.post('/create-preference', async (req, res) => {
         description: courseName ? `Acesso ao curso: ${courseName}` : 'Acesso Premium a todos os cursos',
         quantity: 1,
         currency_id: 'BRL',
-        unit_price: Math.round(prices[planType] * 100), // Mercado Pago usa centavos
+        unit_price: Math.round(prices[planType] * 100), // Mercado Pago usa centavos - R$ 1,00 = 100 centavos
         category_id: 'services', // Categoria de serviço (recomendado)
       }],
       payer: {

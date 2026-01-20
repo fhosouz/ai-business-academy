@@ -52,7 +52,7 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
         },
         body: JSON.stringify({
           title: courseName || 'Assinatura Premium',
-          price: 99.90,
+          price: 1.00,
           quantity: 1,
         }),
       });
@@ -205,7 +205,7 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
               <Card>
                 <CardContent className="p-6 text-center">
                   <div className="space-y-4">
-                    <div className="text-3xl font-bold text-blue-600">R$ 99,90/mês</div>
+                    <div className="text-3xl font-bold text-blue-600">R$ 1,00/mês</div>
                     <p className="text-muted-foreground">Acesso imediato a todos os cursos premium</p>
                     
                     <Button
