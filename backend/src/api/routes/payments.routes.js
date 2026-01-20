@@ -84,11 +84,22 @@ router.post('/create-preference', async (req, res) => {
     }
 
     // Criar preferência de pagamento usando SDK oficial (ES modules)
+    console.log('=== MERCADO PAGO PREFERENCE DATA ===');
+    console.log('Prices:', prices);
+    console.log('Plan Type:', planType);
+    console.log('Unit Price:', prices[planType]);
+    console.log('Full Preference Data:', JSON.stringify(preferenceData, null, 2));
+    
     const preference = new Preference(client);
     const result = await preference.create({
       body: preferenceData
     });
-    console.log('Mercado Pago SDK response:', result);
+    
+    console.log('=== MERCADO PAGO SDK RESPONSE ===');
+    console.log('Full Response:', JSON.stringify(result, null, 2));
+    console.log('Preference ID:', result.id);
+    console.log('Items:', result.items);
+    console.log('Item Unit Price:', result.items?.[0]?.unit_price);
     
     // Registrar pagamento inicial no banco de dados
     try {
@@ -120,6 +131,13 @@ router.post('/create-preference', async (req, res) => {
       data: {
         preferenceId: result.id,
         init_point: result.init_point
+      },
+      debug: {
+        sentPrice: prices[planType],
+        sentUnitPrice: prices[planType],
+        receivedUnitPrice: result.items?.[0]?.unit_price,
+        preferenceId: result.id,
+        initPoint: result.init_point
       }
     });
   } catch (error) {
