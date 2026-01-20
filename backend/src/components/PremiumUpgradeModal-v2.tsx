@@ -160,7 +160,7 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
   const plans = {
     premium: {
       name: 'Premium',
-      price: 'R$ 99,90/mês',
+      price: 'R$ 1,00/mês',
       description: 'Acesso completo a todos os cursos',
       features: [
         'Acesso a todos os cursos',
@@ -173,7 +173,7 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
     },
     enterprise: {
       name: 'Enterprise',
-      price: 'R$ 299,90/mês',
+      price: 'R$ 1,00/mês',
       description: 'Para equipes e empresas',
       features: [
         'Tudo do plano Premium',
@@ -206,10 +206,9 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="payment" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs defaultValue="plans" className="w-full">
+          <TabsList className="grid w-full grid-cols-1">
             <TabsTrigger value="plans">Planos</TabsTrigger>
-            <TabsTrigger value="payment">Pagamento</TabsTrigger>
           </TabsList>
 
           <TabsContent value="plans" className="space-y-6">
@@ -232,15 +231,9 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
                       </div>
                       
                       <Button
-                        onClick={() => {
-                          setSelectedPlan(key as PlanType);
-                          // Mudar para aba de pagamento automaticamente
-                          setTimeout(() => {
-                            const paymentTab = document.querySelector('[value="payment"]');
-                            if (paymentTab) paymentTab.click();
-                          }, 100);
-                        }}
-                        className={`w-full ${plan.color} hover:opacity-90`}
+                        onClick={() => handleCheckout(selectedPlan)}
+                        disabled={isLoading}
+                        className={`w-full ${plans[selectedPlan].color} hover:opacity-90 text-white`}
                         variant={selectedPlan === key ? "default" : "outline"}
                       >
                         {selectedPlan === key ? 'Selecionado' : `Selecionar ${plan.name}`}
@@ -250,60 +243,6 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
                 </Card>
               ))}
             </div>
-          </TabsContent>
-
-          <TabsContent value="payment" className="space-y-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-center space-y-6">
-                  <div className="space-y-2">
-                    <div className="text-2xl font-bold">
-                      Plano {plans[selectedPlan].name}
-                    </div>
-                    <div className="text-3xl font-bold text-blue-600">
-                      {plans[selectedPlan].price}
-                    </div>
-                    <p className="text-muted-foreground">
-                      Pagamento processado com segurança pelo Mercado Pago
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-center gap-2">
-                      <Shield className="w-5 h-5 text-green-600" />
-                      <span className="text-sm">Pagamento seguro</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2">
-                      <Zap className="w-5 h-5 text-yellow-500" />
-                      <span className="text-sm">Acesso imediato</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2">
-                      <Star className="w-5 h-5 text-blue-600" />
-                      <span className="text-sm">Cancelamento a qualquer momento</span>
-                    </div>
-                  </div>
-                  
-                  <Button
-                    onClick={() => handleCheckout(selectedPlan)}
-                    disabled={isLoading}
-                    className={`w-full ${plans[selectedPlan].color} hover:opacity-90 text-white`}
-                    size="lg"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Processando...
-                      </>
-                    ) : (
-                      <>
-                        <CreditCard className="w-4 h-4 mr-2" />
-                        Pagar com Mercado Pago
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </DialogContent>
