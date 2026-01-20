@@ -44,21 +44,10 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
   }, [isOpen, courseName, currentPlan]);
 
   useEffect(() => {
-    // Carregar script do Mercado Pago dinamicamente
-    if (typeof window !== 'undefined' && !(window as any).MercadoPago) {
-      const script = document.createElement('script');
-      script.src = 'https://sdk.mercadopago.com/js/v2';
-      script.async = true;
-      script.onload = () => {
-        if ((window as any).MercadoPago && env.MERCADO_PAGO_PUBLIC_KEY) {
-          (window as any).MercadoPago.configure({
-            sandbox: true, // Modo sandbox para testes
-          });
-          console.log('=== MERCADO PAGO CONFIGURED ===');
-        }
-      };
-      document.body.appendChild(script);
-    }
+    // Removido SDK do Mercado Pago do frontend
+    // Agora toda integração é via backend
+    console.log('=== PAGAMENTO VIA BACKEND ===');
+    console.log('API URL:', env.VITE_API_URL);
   }, []);
 
   const handleCheckout = async (planType: PlanType) => {
@@ -74,62 +63,48 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
         enterprise: 299.90
       };
 
-      // Criar preferência de pagamento do Mercado Pago
-      const preferenceData = {
-        items: [{
-          id: `plan_${planType}`,
-          title: `Plano ${planType.charAt(0).toUpperCase() + planType.slice(1)} - AI Business Academy`,
-          description: courseName ? `Acesso ao curso: ${courseName}` : 'Acesso Premium a todos os cursos',
-          quantity: 1,
-          currency_id: 'BRL',
-          unit_price: Math.round(prices[planType] * 100), // Mercado Pago usa centavos
-        }],
-        payer: {
-          name: formData.name || 'Usuario',
-          email: formData.email || 'user@example.com',
-        },
-        back_urls: {
-          success: `${window.location.origin}/payment/success`,
-          failure: `${window.location.origin}/payment/failure`,
-          pending: `${window.location.origin}/payment/pending`,
-        },
-        auto_return: 'approved',
-        external_reference: `plan_${planType}_${Date.now()}`,
-      };
-
-      console.log('=== CRIANDO PREFERÊNCIA MERCADO PAGO ===');
-      console.log('Preference data:', preferenceData);
-
-      // Usar a API do Mercado Pago diretamente
-      const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
+      // Chamar backend para criar preferência de pagamento
+      const response = await fetch(`${env.VITE_API_URL}/payments/create-preference`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(preferenceData),
+        body: JSON.stringify({
+          planType,
+          courseName,
+          payerInfo: {
+            name: formData.name || 'Usuario',
+            email: formData.email || 'user@example.com',
+          },
+          returnUrl: `${window.location.origin}/payment/success`,
+          failureUrl: `${window.location.origin}/payment/failure`,
+        }),
       });
 
-      console.log('Checkout response status:', response.status);
+      console.log('Backend response status:', response.status);
       
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Checkout error:', errorData);
-        throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || 'Unknown error'}`);
+        console.error('Backend error:', errorData);
+        toast({
+          title: "Erro ao processar pagamento",
+          description: errorData.message || "Não foi possível processar seu pagamento. Tente novamente.",
+          variant: "destructive",
+        });
+        return;
       }
 
       const data = await response.json();
-      console.log('Checkout response data:', data);
+      console.log('Backend response data:', data);
       
-      if (data.init_point) {
+      // Redirecionar para URL do Mercado Pago retornada pelo backend
+      if (data.data?.initPoint || data.data?.sandboxInitPoint) {
         console.log('=== REDIRECTING TO MERCADO PAGO ===');
-        console.log('Redirect URL:', data.init_point);
-        window.location.href = data.init_point;
-      } else if (data.sandbox_init_point) {
-        console.log('=== REDIRECTING TO MERCADO PAGO SANDBOX ===');
-        console.log('Redirect URL:', data.sandbox_init_point);
-        window.location.href = data.sandbox_init_point;
+        const redirectUrl = data.data.initPoint || data.data.sandboxInitPoint;
+        console.log('Redirect URL:', redirectUrl);
+        window.location.href = redirectUrl;
       } else {
-        console.error('No init_point received:', data);
+        console.error('No redirect URL received:', data);
         toast({
           title: "Erro ao processar pagamento",
           description: "Não foi possível gerar o link de pagamento. Tente novamente.",
@@ -231,11 +206,10 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="plans" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="payment" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="plans">Planos</TabsTrigger>
             <TabsTrigger value="payment">Pagamento</TabsTrigger>
-            <TabsTrigger value="contact">Fale Conosco</TabsTrigger>
           </TabsList>
 
           <TabsContent value="plans" className="space-y-6">
@@ -258,7 +232,14 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
                       </div>
                       
                       <Button
-                        onClick={() => setSelectedPlan(key as PlanType)}
+                        onClick={() => {
+                          setSelectedPlan(key as PlanType);
+                          // Mudar para aba de pagamento automaticamente
+                          setTimeout(() => {
+                            const paymentTab = document.querySelector('[value="payment"]');
+                            if (paymentTab) paymentTab.click();
+                          }, 100);
+                        }}
                         className={`w-full ${plan.color} hover:opacity-90`}
                         variant={selectedPlan === key ? "default" : "outline"}
                       >
@@ -321,96 +302,6 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
                     )}
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="contact" className="space-y-4">
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-lg mb-4">
-                  Fale conosco para saber mais sobre nossos planos
-                </h3>
-                
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="name">Nome completo *</Label>
-                      <Input
-                        id="name"
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => handleInputChange('name', e.target.value)}
-                        placeholder="Seu nome completo"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="email">Email *</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        placeholder="seu@email.com"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="phone">Telefone</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      placeholder="(11) 99999-9999"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="message">Mensagem *</Label>
-                    <Textarea
-                      id="message"
-                      value={formData.message}
-                      onChange={(e) => handleInputChange('message', e.target.value)}
-                      placeholder="Conte-nos sobre seu interesse no plano premium..."
-                      rows={4}
-                      required
-                    />
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="flex-1"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-4 h-4 mr-2" />
-                          Enviar Solicitação
-                        </>
-                      )}
-                    </Button>
-                    
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={onClose}
-                      className="flex-1"
-                    >
-                      Fechar
-                    </Button>
-                  </div>
-                </form>
               </CardContent>
             </Card>
           </TabsContent>
