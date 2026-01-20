@@ -83,8 +83,7 @@ router.post('/create-preference', async (req, res) => {
       message: 'Payment preference created successfully',
       data: {
         preferenceId: result.id,
-        initPoint: result.init_point,
-        sandboxInitPoint: result.sandbox_init_point
+        init_point: result.init_point
       }
     });
   } catch (error) {
