@@ -25,11 +25,22 @@ router.post('/create-preference', async (req, res) => {
   try {
     const { planType, courseName, payerInfo, returnUrl, failureUrl } = req.body;
     
-    console.log('=== CREATING MERCADO PAGO PREFERENCE ===');
-    console.log('Plan:', planType);
-    console.log('Course:', courseName);
-    console.log('Payer:', payerInfo);
-    console.log('User ID:', req.user?.id); // Log ID do usuário autenticado
+    // Input validation
+    if (!planType || !['premium', 'enterprise'].includes(planType)) {
+      return res.status(400).json({
+        message: 'Invalid or missing planType',
+        error: 'planType must be premium or enterprise'
+      });
+    }
+
+    if (!payerInfo?.email) {
+      return res.status(400).json({
+        message: 'Missing required payer information',
+        error: 'payerInfo.email is required'
+      });
+    }
+
+    console.log('Creating payment preference for plan:', planType);
     
     // Preços dos planos - EM REAIS (DECIMAL)
     const prices = {
@@ -44,24 +55,13 @@ router.post('/create-preference', async (req, res) => {
       email: payerInfo?.email || req.user?.email || 'user@example.com',
       identification: {
         type: 'CPF',
-        number: req.user?.user_metadata?.cpf || ''
+        number: req.user?.user_metadata?.cpf || payerInfo?.cpf || ''
       }
     };
 
-    console.log('=== USER DATA FROM AUTH ===');
-    console.log('Auth User:', req.user);
-    console.log('User Email:', req.user?.email);
-    console.log('User Metadata:', req.user?.user_metadata);
-    console.log('Final Payer Data:', userData);
-
-    // Criar preferência de pagamento do Mercado Pago
-    console.log('=== MERCADO PAGO PREFERENCE DATA ===');
-    console.log('Prices:', prices);
-    console.log('Plan Type:', planType);
-    console.log('Unit Price:', prices[planType]);
-    console.log('Payer:', payerInfo);
     
     const preferenceData = {
+      items: [{
         id: `plan_${planType}`,
         title: `Plano ${planType.charAt(0).toUpperCase() + planType.slice(1)} - AutomatizeAI Academy`,
         description: courseName ? `Acesso ao curso: ${courseName}` : 'Acesso Premium a todos os cursos',
@@ -104,33 +104,27 @@ router.post('/create-preference', async (req, res) => {
       });
     }
 
-    // Criar preferência de pagamento usando SDK oficial (ES modules)
-    console.log('Prices:', prices);
-    console.log('Plan Type:', planType);
-    console.log('Unit Price:', prices[planType]);
-    console.log('Full Preference Data:', JSON.stringify(preferenceData, null, 2));
     
     const preference = new Preference(client);
     const result = await preference.create({
       body: preferenceData
     });
     
-    console.log('=== MERCADO PAGO SDK RESPONSE ===');
-    console.log('Full Response:', JSON.stringify(result, null, 2));
-    console.log('Preference ID:', result.id);
-    console.log('Items:', result.items);
-    console.log('Item Unit Price:', result.items?.[0]?.unit_price);
+    console.log('Payment preference created:', result.id);
     
     // Registrar pagamento inicial no banco de dados
     try {
+      const userId = req.user?.id || payerInfo?.userId;
       const { data: paymentRecord, error: paymentError } = await supabase
         .from('payments')
         .insert({
-          user_id: payerInfo?.userId || null, // TODO: Obter user_id do auth
+          user_id: userId || null,
           provider: 'MERCADO_PAGO',
           external_payment_id: result.id,
-          external_reference: `plan_${planType}_${Date.now()}`,
+          external_reference: preferenceData.external_reference,
           amount: prices[planType],
+          currency: 'BRL',
+          plan_type: planType,
           status: 'PENDING',
           created_at: new Date().toISOString()
         })
@@ -139,8 +133,9 @@ router.post('/create-preference', async (req, res) => {
       
       if (paymentError) {
         console.error('Error recording payment:', paymentError);
+        // Não falhar a requisição se o registro no BD falhar
       } else {
-        console.log('Payment recorded:', paymentRecord);
+        console.log('Payment recorded:', paymentRecord.id);
       }
     } catch (dbError) {
       console.error('Database error recording payment:', dbError);
@@ -150,14 +145,8 @@ router.post('/create-preference', async (req, res) => {
       message: 'Payment preference created successfully',
       data: {
         preferenceId: result.id,
-        init_point: result.init_point
-      },
-      debug: {
-        sentPrice: prices[planType],
-        sentUnitPrice: prices[planType],
-        receivedUnitPrice: result.items?.[0]?.unit_price,
-        preferenceId: result.id,
-        initPoint: result.init_point
+        initPoint: result.init_point,
+        sandboxInitPoint: result.sandbox_init_point
       }
     });
   } catch (error) {
@@ -170,20 +159,50 @@ router.post('/create-preference', async (req, res) => {
 });
 
 // Get payment status
-router.get('/status/:id', (req, res) => {
-  const { id } = req.params;
-  
-  // Placeholder - implementar lógica real depois
-  res.json({
-    message: 'Get payment status endpoint - placeholder',
-    data: {
-      paymentId: id,
-      status: 'pending',
-      amount: 99.99
-    },
-    status: 'implemented',
-    timestamp: new Date().toISOString()
-  });
+router.get('/status/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({
+        message: 'Payment ID is required',
+        error: 'Missing payment ID'
+      });
+    }
+
+    // Buscar pagamento no banco de dados
+    const { data: payment, error } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('external_payment_id', id)
+      .single();
+
+    if (error || !payment) {
+      return res.status(404).json({
+        message: 'Payment not found',
+        error: 'Payment ID not found in database'
+      });
+    }
+
+    res.json({
+      message: 'Payment status retrieved successfully',
+      data: {
+        paymentId: id,
+        status: payment.status,
+        amount: payment.amount,
+        currency: payment.currency,
+        planType: payment.plan_type,
+        createdAt: payment.created_at,
+        updatedAt: payment.updated_at
+      }
+    });
+  } catch (error) {
+    console.error('Error getting payment status:', error);
+    res.status(500).json({
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
 });
 
 export default router;
