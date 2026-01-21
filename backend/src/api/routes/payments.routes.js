@@ -1,7 +1,7 @@
 import express from 'express';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { createClient } from '@supabase/supabase-js';
-import authMiddleware from '../middleware/auth.middleware';
+import authMiddleware from '../middleware/auth.middleware.js';
 
 // Configurar SDK do Mercado Pago para ES modules
 const client = new MercadoPagoConfig({ 
