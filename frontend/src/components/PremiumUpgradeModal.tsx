@@ -73,9 +73,10 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
       const data = await response.json();
       console.log('Backend response data:', data);
       
-      if (data.data?.initPoint) {
-        console.log('Redirecting to:', data.data.initPoint);
-        window.location.href = data.data.initPoint;
+      if (data.data?.initPoint || data.data?.init_point) {
+        const redirectUrl = data.data?.initPoint || data.data?.init_point;
+        console.log('Redirecting to:', redirectUrl);
+        window.location.href = redirectUrl;
       } else {
         console.error('No redirect URL received:', data);
         toast({

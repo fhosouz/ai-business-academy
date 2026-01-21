@@ -123,7 +123,6 @@ router.post('/create-preference', async (req, res) => {
           external_payment_id: result.id,
           external_reference: preferenceData.external_reference,
           amount: prices[planType],
-          currency: 'BRL',
           plan_type: planType,
           status: 'PENDING',
           created_at: new Date().toISOString()
@@ -146,6 +145,7 @@ router.post('/create-preference', async (req, res) => {
       data: {
         preferenceId: result.id,
         initPoint: result.init_point,
+        init_point: result.init_point,
         sandboxInitPoint: result.sandbox_init_point
       }
     });
