@@ -42,19 +42,43 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
 
   const handleCheckout = async () => {
     console.log('=== HANDLE CHECKOUT START ===');
+    console.log('=== BOTÃO PAGAR CLICADO ===');
+    console.log('=== VERIFICANDO ESTADO DO BOTÃO ===');
+    console.log('isLoading:', isLoading);
+    console.log('isOpen:', isOpen);
+    console.log('courseName:', courseName);
+    
     setIsLoading(true);
     try {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
+      console.log('=== USER AUTHENTICATION CHECK ===');
+      console.log('User authenticated:', !!user);
+      console.log('User ID:', user?.id);
+      console.log('User email:', user?.email);
+      console.log('User session valid:', !!user?.session);
+      
+      if (!user) {
+        console.error('=== ERRO: Usuário não autenticado ===');
+        toast({
+          title: "Erro de autenticação",
+          description: "Você precisa estar logado para fazer pagamento.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log('=== PLAN SELECTED ===');
       console.log('Plan selected: premium');
       console.log('Course:', courseName);
       
+      console.log('=== INICIANDO REQUISIÇÃO MERCADO PAGO ===');
       const response = await fetch('https://ai-business-academy-backend.onrender.com/api/payments/create-preference', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user?.session?.access_token}`
+          'Authorization': `Bearer ${user.session?.access_token}`
         },
         body: JSON.stringify({
           planType: 'premium',
@@ -69,24 +93,37 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
         }),
       });
 
-      console.log('Backend response status:', response.status);
+      console.log('=== MERCADO PAGO RESPONSE ===');
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
       const data = await response.json();
-      console.log('Backend response data:', data);
+      console.log('=== RESPONSE DATA ANALYSIS ===');
+      console.log('Full response:', JSON.stringify(data, null, 2));
+      console.log('Response message:', data.message);
+      console.log('Response data exists:', !!data.data);
+      console.log('Response data keys:', data.data ? Object.keys(data.data) : 'NO DATA');
       
       if (data.data?.initPoint || data.data?.init_point) {
         const redirectUrl = data.data?.initPoint || data.data?.init_point;
+        console.log('=== REDIRECT SUCCESS ===');
         console.log('Redirecting to:', redirectUrl);
         window.location.href = redirectUrl;
       } else {
-        console.error('No redirect URL received:', data);
+        console.error('=== NO REDIRECT URL ERROR ===');
+        console.error('Expected data.data.initPoint or data.data.init_point');
+        console.error('Actual response structure:', JSON.stringify(data, null, 2));
         toast({
           title: "Erro ao processar pagamento",
-          description: "Não foi possível gerar o link de pagamento. Tente novamente.",
+          description: "Não foi possível gerar o link de pagamento. Verifique os logs.",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Error creating checkout:', error);
+      console.error('=== CHECKOUT ERROR ===');
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
       toast({
         title: "Erro ao processar pagamento",
         description: "Ocorreu um erro ao processar seu pagamento. Tente novamente.",
@@ -94,6 +131,7 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
       });
     } finally {
       setIsLoading(false);
+      console.log('=== HANDLE CHECKOUT END ===');
     }
   };
 

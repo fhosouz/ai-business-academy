@@ -115,6 +115,12 @@ router.post('/create-preference', async (req, res) => {
     // Registrar pagamento inicial no banco de dados
     try {
       const userId = req.user?.id || payerInfo?.userId;
+      
+      console.log('=== USER ID FOR PAYMENT ===');
+      console.log('req.user:', req.user);
+      console.log('payerInfo.userId:', payerInfo?.userId);
+      console.log('Final userId:', userId);
+      
       const { data: paymentRecord, error: paymentError } = await supabase
         .from('payments')
         .insert({
@@ -131,12 +137,14 @@ router.post('/create-preference', async (req, res) => {
       
       if (paymentError) {
         console.error('Error recording payment:', paymentError);
+        console.error('Error details:', JSON.stringify(paymentError, null, 2));
         // Não falhar a requisição se o registro no BD falhar
       } else {
-        console.log('Payment recorded:', paymentRecord.id);
+        console.log('Payment recorded successfully:', paymentRecord);
       }
     } catch (dbError) {
       console.error('Database error recording payment:', dbError);
+      console.error('DB Error details:', JSON.stringify(dbError, null, 2));
     }
     
     res.json({
