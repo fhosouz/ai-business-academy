@@ -1,6 +1,7 @@
 import express from 'express';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { createClient } from '@supabase/supabase-js';
+import authMiddleware from '../middleware/auth.middleware';
 
 // Configurar SDK do Mercado Pago para ES modules
 const client = new MercadoPagoConfig({ 
@@ -19,6 +20,9 @@ console.log('URL:', process.env.SUPABASE_URL);
 console.log('Service Role Key:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Configured' : 'NOT CONFIGURED');
 
 const router = express.Router();
+
+// Aplicar middleware de autenticação em todas as rotas de pagamentos
+router.use(authMiddleware);
 
 // Create payment preference
 router.post('/create-preference', async (req, res) => {
