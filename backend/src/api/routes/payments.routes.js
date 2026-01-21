@@ -1,7 +1,6 @@
 import express from 'express';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { createClient } from '@supabase/supabase-js';
-import authMiddleware from '../middleware/auth.middleware.js';
 
 // Configurar SDK do Mercado Pago para ES modules
 const client = new MercadoPagoConfig({ 
@@ -13,6 +12,48 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// Middleware inline para evitar problemas de importação
+const authMiddleware = async (req, res, next) => {
+  console.log('=== AUTH MIDDLEWARE ===');
+  console.log('Request headers:', req.headers);
+  console.log('Authorization header:', req.headers.authorization);
+  
+  try {
+    // Extrair token do header Authorization
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('No valid authorization header found');
+      req.user = null;
+      return next();
+    }
+
+    const token = authHeader.split(' ')[1];
+    console.log('Token extracted:', token ? 'EXISTS' : 'MISSING');
+    
+    // Verificar token com Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      console.log('Invalid token or user not found:', error);
+      req.user = null;
+      return next();
+    }
+
+    console.log('User authenticated successfully:', user.id);
+    console.log('User email:', user.email);
+    
+    // Adicionar usuário ao request
+    req.user = user;
+    req.session = { access_token: token };
+    
+    next();
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    req.user = null;
+    next();
+  }
+};
 
 // Verificar configuração do Supabase
 console.log('=== SUPABASE CONFIG ===');
@@ -26,8 +67,6 @@ router.use(authMiddleware);
 
 // Create payment preference
 router.post('/create-preference', async (req, res) => {
-  try {
-    const { planType, courseName, payerInfo, returnUrl, failureUrl } = req.body;
     
     // Input validation
     if (!planType || !['premium', 'enterprise'].includes(planType)) {
