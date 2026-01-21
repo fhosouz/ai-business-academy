@@ -206,7 +206,6 @@ router.post('/create-preference', async (req, res) => {
       error: error.message
     });
   }
-});
 
 // Get payment status
 router.get('/status/:id', async (req, res) => {
