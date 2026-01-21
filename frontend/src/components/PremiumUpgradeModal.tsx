@@ -41,32 +41,43 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
   }, []);
 
   const handleCheckout = async () => {
-    console.log('=== HANDLE CHECKOUT INICIADO ===');
+    console.log('=== HANDLE CHECKOUT START ===');
     setIsLoading(true);
     try {
-      console.log('Enviando requisição para backend...');
-      const response = await fetch('https://ai-business-academy-backend.onrender.com/api/mercadopago/checkout', {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      console.log('Plan selected: premium');
+      console.log('Course:', courseName);
+      
+      const response = await fetch('https://ai-business-academy-backend.onrender.com/api/payments/create-preference', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.session?.access_token}`
         },
         body: JSON.stringify({
-          title: courseName || 'Assinatura Premium',
-          price: 1.00,
-          quantity: 1,
+          planType: 'premium',
+          courseName: courseName || 'Acesso Premium',
+          payerInfo: {
+            name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuario',
+            email: user?.email || 'user@example.com',
+            userId: user?.id
+          },
+          returnUrl: 'https://automatizeai-academy.netlify.app/payment/success',
+          failureUrl: 'https://automatizeai-academy.netlify.app/payment/failure'
         }),
       });
 
-      console.log('Response status:', response.status);
+      console.log('Backend response status:', response.status);
       const data = await response.json();
-      console.log('Backend response:', data);
+      console.log('Backend response data:', data);
       
-      // Sempre redirecionar direto para o checkout
-      if (data.init_point) {
-        console.log('Redirecionando para:', data.init_point);
-        window.location.href = data.init_point;
+      if (data.data?.initPoint) {
+        console.log('Redirecting to:', data.data.initPoint);
+        window.location.href = data.data.initPoint;
       } else {
-        console.error('No init_point received:', data);
+        console.error('No redirect URL received:', data);
         toast({
           title: "Erro ao processar pagamento",
           description: "Não foi possível gerar o link de pagamento. Tente novamente.",
