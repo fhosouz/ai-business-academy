@@ -113,14 +113,17 @@ router.post('/create-preference', async (req, res) => {
       };
 
       // Dados do usuário logado (priorizar dados reais)
+      const rawCpf = req.user?.user_metadata?.cpf || payerInfo?.cpf;
+      const sanitizedCpf = typeof rawCpf === 'string' ? rawCpf.replace(/\D/g, '') : '';
+      const payerIdentification = sanitizedCpf.length === 11
+        ? { type: 'CPF', number: sanitizedCpf }
+        : undefined;
+
       const userData = {
         name: payerInfo?.name || req.user?.user_metadata?.full_name || req.user?.email?.split('@')[0] || 'Usuario',
         surname: payerInfo?.surname || req.user?.user_metadata?.surname || '',
         email: payerInfo?.email || req.user?.email || 'user@example.com',
-        identification: {
-          type: 'CPF',
-          number: req.user?.user_metadata?.cpf || payerInfo?.cpf || ''
-        }
+        ...(payerIdentification ? { identification: payerIdentification } : {})
       };
 
       
@@ -150,9 +153,7 @@ router.post('/create-preference', async (req, res) => {
           ],
           installments: 12 // Máximo de parcelas
         },
-        statement_descriptor: 'AutomatizeAI Academy', // Nome na fatura
-        binary_mode: true, // Modo estrito para validação
-        purpose: 'wallet_purchase' // Modo wallet para melhor UX
+        statement_descriptor: 'AutomatizeAI Academy' // Nome na fatura
       };
 
       // Verificar se temos as credenciais do Mercado Pago
