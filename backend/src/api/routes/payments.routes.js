@@ -126,6 +126,10 @@ router.post('/create-preference', async (req, res) => {
         ...(payerIdentification ? { identification: payerIdentification } : {})
       };
 
+      console.log('=== MERCADO PAGO PAYER DEBUG ===');
+      console.log('payer email provided:', !!userData.email);
+      console.log('payer identification included:', !!payerIdentification);
+
       
       const preferenceData = {
         items: [{
@@ -137,7 +141,6 @@ router.post('/create-preference', async (req, res) => {
           unit_price: prices[planType], // Valor em reais (decimal)
           category_id: 'services', // Categoria de serviço (recomendado)
         }],
-        payer: userData,
         back_urls: {
           success: returnUrl || `${process.env.FRONTEND_URL}/payment/success`,
           failure: failureUrl || `${process.env.FRONTEND_URL}/payment/failure`,
@@ -145,16 +148,12 @@ router.post('/create-preference', async (req, res) => {
         },
         auto_return: 'approved',
         external_reference: `plan_${planType}_${Math.floor(Date.now() / 1000)}`,
-        payment_methods: {
-          excluded_payment_types: [
-            {
-              id: 'ticket' // Excluir boleto (apenas cartão)
-            }
-          ],
-          installments: 12 // Máximo de parcelas
-        },
         statement_descriptor: 'AutomatizeAI Academy' // Nome na fatura
       };
+
+      console.log('=== MERCADO PAGO PREFERENCE DEBUG ===');
+      console.log('preferenceData keys:', Object.keys(preferenceData));
+      console.log('items[0].unit_price:', preferenceData.items?.[0]?.unit_price);
 
       // Verificar se temos as credenciais do Mercado Pago
       if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
