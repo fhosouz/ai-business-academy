@@ -1,4 +1,5 @@
 import express from 'express';
+import { Buffer } from 'node:buffer';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { createClient } from '@supabase/supabase-js';
 
@@ -59,6 +60,24 @@ const authMiddleware = async (req, res, next) => {
 console.log('=== SUPABASE CONFIG ===');
 console.log('URL:', process.env.SUPABASE_URL);
 console.log('Service Role Key:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Configured' : 'NOT CONFIGURED');
+
+const getJwtRoleClaim = (jwt) => {
+  try {
+    if (!jwt) return null;
+    const parts = jwt.split('.');
+    if (parts.length < 2) return null;
+    const payloadB64Url = parts[1];
+    const payloadB64 = payloadB64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = payloadB64.padEnd(payloadB64.length + (4 - (payloadB64.length % 4 || 4)) % 4, '=');
+    const payloadRaw = Buffer.from(padded, 'base64').toString('utf8');
+    const payload = JSON.parse(payloadRaw);
+    return payload?.role ?? null;
+  } catch {
+    return null;
+  }
+};
+
+console.log('Supabase key role claim:', getJwtRoleClaim(process.env.SUPABASE_SERVICE_ROLE_KEY));
 
 const router = express.Router();
 
@@ -165,7 +184,7 @@ router.post('/create-preference', async (req, res) => {
         console.log('payerInfo.userId:', payerInfo?.userId);
         console.log('Final userId:', userId);
         
-        const { data: paymentRecord, error: paymentError } = await supabase
+        const { error: paymentError } = await supabase
           .from('payments')
           .insert({
             user_id: userId || null,
@@ -175,16 +194,14 @@ router.post('/create-preference', async (req, res) => {
             amount: prices[planType],
             status: 'PENDING',
             created_at: new Date().toISOString()
-          })
-          .select()
-          .single();
+          });
         
         if (paymentError) {
           console.error('Error recording payment:', paymentError);
           console.error('Error details:', JSON.stringify(paymentError, null, 2));
           // Não falhar a requisição se o registro no BD falhar
         } else {
-          console.log('Payment recorded successfully:', paymentRecord);
+          console.log('Payment recorded successfully');
         }
       } catch (dbError) {
         console.error('Database error recording payment:', dbError);
