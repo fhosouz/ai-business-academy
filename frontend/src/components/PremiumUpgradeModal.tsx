@@ -52,13 +52,26 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
     try {
       // Obter token via backend (arquitetura correta: frontend -> backend -> supabase)
       console.log('=== OBTENDO TOKEN VIA BACKEND ===');
-      const tokenFromStorage = localStorage.getItem('supabase.auth.token');
-      let accessToken = null;
       
-      if (tokenFromStorage) {
+      // O Supabase armazena o token em localStorage com a chave 'sb-<ref>-auth-token'
+      const storageKeys = Object.keys(localStorage);
+      console.log('LocalStorage keys:', storageKeys);
+      
+      let accessToken = null;
+      const authKey = storageKeys.find(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
+      
+      if (authKey) {
         try {
-          const parsed = JSON.parse(tokenFromStorage);
-          accessToken = parsed?.access_token;
+          const tokenData = localStorage.getItem(authKey);
+          console.log('Auth key found:', authKey);
+          console.log('Token data exists:', !!tokenData);
+          
+          if (tokenData) {
+            const parsed = JSON.parse(tokenData);
+            accessToken = parsed?.access_token;
+            console.log('Access token extracted:', !!accessToken);
+            console.log('Token length:', accessToken?.length || 0);
+          }
         } catch (e) {
           console.error('Failed to parse stored token:', e);
         }
@@ -66,6 +79,7 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
       
       if (!accessToken) {
         console.error('=== NO ACCESS TOKEN IN STORAGE ===');
+        console.error('Available keys:', storageKeys);
         toast({
           title: "Erro de autenticação",
           description: "Você precisa estar logado para fazer o pagamento. Por favor, faça login novamente.",
