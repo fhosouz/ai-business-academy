@@ -703,6 +703,33 @@ export type Database = {
           }
         ]
       }
+      user_plans: {
+        Row: {
+          current_period_end: string | null
+          id: string
+          plan_type: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          current_period_end?: string | null
+          id?: string
+          plan_type: string
+          status: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          current_period_end?: string | null
+          id?: string
+          plan_type?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null

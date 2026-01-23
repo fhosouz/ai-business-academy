@@ -143,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   .from('user_plans')
                   .select('*')
                   .eq('user_id', user.id)
-                  .single();
+                  .maybeSingle();
                   
                 console.log('=== PLAN QUERY RESULT ===');
                 console.log('Plan data:', plan);
@@ -154,7 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   .from('user_roles')
                   .select('*')
                   .eq('user_id', user.id)
-                  .single();
+                  .maybeSingle();
                   
                 console.log('=== ROLE QUERY RESULT ===');
                 console.log('Role data:', role);
