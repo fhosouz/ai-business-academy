@@ -17,8 +17,38 @@ const supabase = createClient(
 // Middleware inline para evitar problemas de importação
 const authMiddleware = async (req, res, next) => {
   console.log('=== AUTH MIDDLEWARE ===');
-  console.log('Request headers:', req.headers);
-  console.log('Authorization header:', req.headers.authorization);
+  console.log('Request headers:', {
+    host: req.headers.host,
+    'user-agent': req.headers['user-agent'],
+    'content-length': req.headers['content-length'],
+    accept: req.headers.accept,
+    'accept-encoding': req.headers['accept-encoding'],
+    'accept-language': req.headers['accept-language'],
+    'cdn-loop': req.headers['cdn-loop'],
+    'cf-connecting-ip': req.headers['cf-connecting-ip'],
+    'cf-ipcountry': req.headers['cf-ipcountry'],
+    'cf-ray': req.headers['cf-ray'],
+    'cf-visitor': req.headers['cf-visitor'],
+    'content-type': req.headers['content-type'],
+    origin: req.headers.origin,
+    priority: req.headers.priority,
+    referer: req.headers.referer,
+    'render-proxy-ttl': req.headers['render-proxy-ttl'],
+    'rndr-id': req.headers['rndr-id'],
+    'sec-ch-ua': req.headers['sec-ch-ua'],
+    'sec-ch-ua-mobile': req.headers['sec-ch-ua-mobile'],
+    'sec-ch-ua-platform': req.headers['sec-ch-ua-platform'],
+    'sec-fetch-dest': req.headers['sec-fetch-dest'],
+    'sec-fetch-mode': req.headers['sec-fetch-mode'],
+    'sec-fetch-site': req.headers['sec-fetch-site'],
+    'true-client-ip': req.headers['true-client-ip'],
+    'x-forwarded-for': req.headers['x-forwarded-for'],
+    'x-forwarded-proto': req.headers['x-forwarded-proto'],
+    'x-request-start': req.headers['x-request-start'],
+    authorization: req.headers.authorization || 'undefined'
+  });
+  console.log('Authorization header:', req.headers.authorization || 'undefined');
+  console.log('Cookie header:', req.headers.cookie || 'undefined');
   
   try {
     // Extrair token do header Authorization
@@ -150,7 +180,8 @@ router.post('/create-preference', async (req, res) => {
         external_reference: `plan_${planType}_${Math.floor(Date.now() / 1000)}`,
         statement_descriptor: 'AutomatizeAI Academy', // Nome na fatura
         binary_mode: true,
-        purpose: 'wallet_purchase'
+        purpose: 'wallet_purchase',
+        locale: 'pt-BR'
       };
 
       console.log('=== MERCADO PAGO PREFERENCE DEBUG ===');
