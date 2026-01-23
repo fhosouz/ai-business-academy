@@ -148,7 +148,9 @@ router.post('/create-preference', async (req, res) => {
         },
         auto_return: 'approved',
         external_reference: `plan_${planType}_${Math.floor(Date.now() / 1000)}`,
-        statement_descriptor: 'AutomatizeAI Academy' // Nome na fatura
+        statement_descriptor: 'AutomatizeAI Academy', // Nome na fatura
+        binary_mode: true,
+        purpose: 'wallet_purchase'
       };
 
       console.log('=== MERCADO PAGO PREFERENCE DEBUG ===');
