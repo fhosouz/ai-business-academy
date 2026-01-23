@@ -50,43 +50,83 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
     
     setIsLoading(true);
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      // Obter token via backend (arquitetura correta: frontend -> backend -> supabase)
+      console.log('=== OBTENDO TOKEN VIA BACKEND ===');
+      const tokenFromStorage = localStorage.getItem('supabase.auth.token');
+      let accessToken = null;
       
-      console.log('=== USER AUTHENTICATION CHECK ===');
-      console.log('User authenticated:', !!user);
-      console.log('User ID:', user?.id);
-      console.log('User email:', user?.email);
-      console.log('User session valid:', !!user?.session);
+      if (tokenFromStorage) {
+        try {
+          const parsed = JSON.parse(tokenFromStorage);
+          accessToken = parsed?.access_token;
+        } catch (e) {
+          console.error('Failed to parse stored token:', e);
+        }
+      }
       
-      if (!user) {
-        console.error('=== ERRO: Usuário não autenticado ===');
+      if (!accessToken) {
+        console.error('=== NO ACCESS TOKEN IN STORAGE ===');
         toast({
           title: "Erro de autenticação",
-          description: "Você precisa estar logado para fazer pagamento.",
+          description: "Você precisa estar logado para fazer o pagamento. Por favor, faça login novamente.",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
       
+      console.log('Access token exists:', !!accessToken);
+      console.log('Token length:', accessToken?.length || 0);
+      
+      // Opcional: validar token com backend antes de prosseguir
+      let meData = null;
+      try {
+        const meResponse = await fetch('https://ai-business-academy-backend.onrender.com/api/auth/me', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+        
+        if (!meResponse.ok) {
+          console.error('Token validation failed:', meResponse.status);
+          throw new Error('Token inválido');
+        }
+        
+        const meResult = await meResponse.json();
+        meData = meResult.data;
+        console.log('Token valid for user:', meData.user?.email);
+      } catch (meError) {
+        console.error('Error validating token:', meError);
+        toast({
+          title: "Erro de autenticação",
+          description: "Sua sessão expirou. Por favor, faça login novamente.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
       console.log('=== PLAN SELECTED ===');
       console.log('Plan selected: premium');
       console.log('Course:', courseName);
       
       console.log('=== INICIANDO REQUISIÇÃO MERCADO PAGO ===');
+      console.log('Authorization header will be:', `Bearer ${accessToken ? 'EXISTS' : 'MISSING'}`);
+      
       const response = await fetch('https://ai-business-academy-backend.onrender.com/api/payments/create-preference', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.session?.access_token}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           planType: 'premium',
           courseName: courseName || 'Acesso Premium',
           payerInfo: {
-            name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuario',
-            email: user?.email || 'user@example.com',
-            userId: user?.id
+            name: meData?.user?.user_metadata?.full_name || meData?.user?.email?.split('@')[0] || 'Usuario',
+            email: meData?.user?.email || 'user@example.com',
+            userId: meData?.user?.id
           },
           returnUrl: 'https://automatizeai-academy.netlify.app/payment/success',
           failureUrl: 'https://automatizeai-academy.netlify.app/payment/failure'
