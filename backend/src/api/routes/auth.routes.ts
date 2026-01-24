@@ -1,13 +1,14 @@
 // Rotas de Autenticação - Controllers
 import { Router } from 'express';
-import { authService } from '../services/auth.service.js';
-import { validateRequest } from '../middleware/validation.js';
-import { loginSchema, registerSchema } from '../schemas/auth.schemas.js';
+import { authService } from '../services/auth.service';
+
+// Import do middleware JavaScript
+const { authMiddleware } = require('../middleware/auth.middleware');
 
 const router = Router();
 
 // Login
-router.post('/login', validateRequest(loginSchema), async (req, res, next) => {
+router.post('/login', authMiddleware, async (req, res, next) => {
   try {
     const result = await authService.login(req.body);
     res.json(result);
@@ -17,7 +18,7 @@ router.post('/login', validateRequest(loginSchema), async (req, res, next) => {
 });
 
 // Register
-router.post('/register', validateRequest(registerSchema), async (req, res, next) => {
+router.post('/register', authMiddleware, async (req, res, next) => {
   try {
     const result = await authService.register(req.body);
     res.json(result);
@@ -27,13 +28,9 @@ router.post('/register', validateRequest(registerSchema), async (req, res, next)
 });
 
 // Logout
-router.post('/logout', async (req, res, next) => {
+router.post('/logout', authMiddleware, async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-    
+    const token = req.headers.authorization?.split(' ')[1];
     await authService.logout(token);
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
