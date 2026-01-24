@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => {
         },
       },
       // Forçar limpeza de cache
-      minify: 'terser',
+      minify: 'esbuild',
     },
     // Forçar versão no bundle
     define: {

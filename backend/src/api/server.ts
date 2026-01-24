@@ -19,9 +19,119 @@ const supabase = createClient(
 app.use(cors());
 app.use(express.json());
 
+type DbFilterOp = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'in';
+
+type DbQueryPayload = {
+  table: string;
+  action: 'select' | 'insert' | 'update' | 'upsert' | 'delete' | 'rpc';
+  select?: string;
+  filters?: Array<{ column: string; op: DbFilterOp; value: any }>;
+  order?: { column: string; ascending?: boolean };
+  limit?: number;
+  single?: boolean;
+  maybeSingle?: boolean;
+  payload?: any;
+  upsert?: { onConflict?: string };
+  rpc?: { fn: string; args?: Record<string, any> };
+};
+
+async function getUserFromRequest(req: express.Request) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { user: null as any, token: null as string | null, error: 'MISSING_AUTH_HEADER' };
+  }
+  const token = authHeader.slice('Bearer '.length).trim();
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data?.user) {
+    return { user: null as any, token, error: 'INVALID_TOKEN' };
+  }
+  return { user: data.user, token, error: null as string | null };
+}
+
+function applyFilters(query: any, filters: DbQueryPayload['filters']) {
+  if (!filters || !Array.isArray(filters)) return query;
+  for (const f of filters) {
+    if (!f?.column || !f?.op) continue;
+    switch (f.op) {
+      case 'eq':
+        query = query.eq(f.column, f.value);
+        break;
+      case 'neq':
+        query = query.neq(f.column, f.value);
+        break;
+      case 'gt':
+        query = query.gt(f.column, f.value);
+        break;
+      case 'gte':
+        query = query.gte(f.column, f.value);
+        break;
+      case 'lt':
+        query = query.lt(f.column, f.value);
+        break;
+      case 'lte':
+        query = query.lte(f.column, f.value);
+        break;
+      case 'like':
+        query = query.like(f.column, f.value);
+        break;
+      case 'ilike':
+        query = query.ilike(f.column, f.value);
+        break;
+      case 'in':
+        query = query.in(f.column, f.value);
+        break;
+    }
+  }
+  return query;
+}
+
+function enforceUserScope(payload: DbQueryPayload, userId: string) {
+  const scopedTables = new Set([
+    'user_profiles',
+    'user_plans',
+    'user_roles',
+    'user_lesson_progress',
+    'payments',
+  ]);
+
+  if (!scopedTables.has(payload.table)) return payload;
+
+  const filters = Array.isArray(payload.filters) ? [...payload.filters] : [];
+  const userIdFilter = filters.find((f) => f?.column === 'user_id' && f?.op === 'eq');
+  if (userIdFilter && userIdFilter.value !== userId) {
+    throw new Error('USER_SCOPE_VIOLATION');
+  }
+  if (!userIdFilter) {
+    filters.push({ column: 'user_id', op: 'eq', value: userId });
+  }
+  return { ...payload, filters };
+}
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Get current user (frontend auth context)
+app.get('/api/auth/me', async (req, res) => {
+  try {
+    const { user, error } = await getUserFromRequest(req);
+    if (error || !user) {
+      return res.status(401).json({ message: 'Unauthorized', error });
+    }
+    return res.json({
+      message: 'User retrieved successfully',
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          user_metadata: user.user_metadata,
+        },
+      },
+    });
+  } catch (e: any) {
+    return res.status(500).json({ message: 'Internal server error', error: e?.message });
+  }
 });
 
 // Autenticação
@@ -38,7 +148,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    res.json({ user: data.user, session: data.session });
+    res.json({ user: data.user, session: data.session, token: data.session?.access_token || null });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -62,9 +172,96 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    res.json({ user: data.user, session: data.session });
+    res.json({ user: data.user, session: data.session, token: data.session?.access_token || null });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Generic DB endpoint (used by frontend supabase shim)
+app.post('/api/db/query', async (req, res) => {
+  try {
+    const { user, error } = await getUserFromRequest(req);
+    if (error || !user) {
+      return res.status(401).json({ error: 'Unauthorized', code: error });
+    }
+
+    const body = req.body as DbQueryPayload;
+    if (!body?.table || !body?.action) {
+      return res.status(400).json({ error: 'Missing table/action' });
+    }
+
+    const safeBody = enforceUserScope(body, user.id);
+
+    const allowedActions = new Set(['select', 'insert', 'update', 'upsert', 'delete', 'rpc']);
+    if (!allowedActions.has(safeBody.action)) {
+      return res.status(400).json({ error: 'Unsupported action' });
+    }
+
+    let query: any;
+
+    if (safeBody.action === 'rpc') {
+      if (!safeBody.rpc?.fn) {
+        return res.status(400).json({ error: 'Missing rpc.fn' });
+      }
+      const { data, error: rpcError } = await supabase.rpc(safeBody.rpc.fn, safeBody.rpc.args || {});
+      return res.json({ data, error: rpcError || null });
+    }
+
+    if (safeBody.action === 'select') {
+      query = supabase.from(safeBody.table).select(safeBody.select || '*');
+      query = applyFilters(query, safeBody.filters);
+      if (safeBody.order?.column) {
+        query = query.order(safeBody.order.column, { ascending: safeBody.order.ascending !== false });
+      }
+      if (typeof safeBody.limit === 'number') {
+        query = query.limit(safeBody.limit);
+      }
+      if (safeBody.single) {
+        query = query.single();
+      } else if (safeBody.maybeSingle) {
+        query = query.maybeSingle();
+      }
+      const { data, error: qError } = await query;
+      return res.json({ data, error: qError || null });
+    }
+
+    if (safeBody.action === 'insert') {
+      query = supabase.from(safeBody.table).insert(safeBody.payload);
+      const { data, error: qError } = await query;
+      return res.json({ data, error: qError || null });
+    }
+
+    if (safeBody.action === 'update') {
+      query = supabase.from(safeBody.table).update(safeBody.payload);
+      query = applyFilters(query, safeBody.filters);
+      const { data, error: qError } = await query;
+      return res.json({ data, error: qError || null });
+    }
+
+    if (safeBody.action === 'upsert') {
+      query = supabase
+        .from(safeBody.table)
+        .upsert(
+          safeBody.payload,
+          safeBody.upsert?.onConflict ? { onConflict: safeBody.upsert.onConflict } : undefined
+        );
+      const { data, error: qError } = await query;
+      return res.json({ data, error: qError || null });
+    }
+
+    if (safeBody.action === 'delete') {
+      query = supabase.from(safeBody.table).delete();
+      query = applyFilters(query, safeBody.filters);
+      const { data, error: qError } = await query;
+      return res.json({ data, error: qError || null });
+    }
+
+    return res.status(400).json({ error: 'Unhandled action' });
+  } catch (e: any) {
+    const message = e?.message || 'Internal server error';
+    const status = message === 'USER_SCOPE_VIOLATION' ? 403 : 500;
+    return res.status(status).json({ error: message });
   }
 });
 

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { BookOpen } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput } from '@/utils/inputValidation';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { SignInForm } from '@/components/auth/SignInForm';
@@ -60,17 +58,35 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+      // Chamada via API backend (arquitetura 3 camadas)
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
       });
 
-      if (error) throw error;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Erro no login');
+      }
 
       toast({
         title: "Login realizado com sucesso!",
         description: "Redirecionando para a plataforma...",
       });
+
+      // Armazenar token e redirecionar
+      if (data.token) {
+        localStorage.setItem('auth_token', data.token);
+        navigate('/');
+      }
+
     } catch (error) {
       toast({
         title: "Erro no login",
@@ -99,30 +115,23 @@ const Login = () => {
     setIsSigningUp(true);
     
     try {
-      const { error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/login?message=confirmed`,
-          data: {
-            full_name: sanitizeInput(formData.fullName, 50),
-            display_name: sanitizeInput(formData.fullName, 50)
-          }
-        }
+      // Chamada via API backend (arquitetura 3 camadas)
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          fullName: sanitizeInput(formData.fullName, 50),
+        }),
       });
 
-      if (error) throw error;
+      const data = await response.json();
 
-      try {
-        await supabase.functions.invoke('send-welcome-email', {
-          body: {
-            email: formData.email,
-            name: sanitizeInput(formData.fullName, 50),
-            confirmationUrl: `${window.location.origin}/login?message=confirmed`
-          }
-        });
-      } catch (emailError) {
-        console.error('Erro ao enviar email de boas-vindas:', emailError);
+      if (!response.ok) {
+        throw new Error(data.message || 'Erro no cadastro');
       }
 
       toast({
