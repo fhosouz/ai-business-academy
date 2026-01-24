@@ -56,25 +56,35 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName }: PremiumUpgradeModa
       // O Supabase armazena o token em localStorage com a chave 'sb-<ref>-auth-token'
       const storageKeys = Object.keys(localStorage);
       console.log('LocalStorage keys:', storageKeys);
+      console.log('LocalStorage completo:', JSON.stringify(localStorage, null, 2));
       
       let accessToken = null;
       const authKey = storageKeys.find(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
       
+      console.log('Auth key encontrada:', authKey);
+      
       if (authKey) {
         try {
           const tokenData = localStorage.getItem(authKey);
-          console.log('Auth key found:', authKey);
-          console.log('Token data exists:', !!tokenData);
+          console.log('Token data bruto:', tokenData);
+          console.log('Token data existe:', !!tokenData);
           
           if (tokenData) {
             const parsed = JSON.parse(tokenData);
+            console.log('Token parseado:', JSON.stringify(parsed, null, 2));
             accessToken = parsed?.access_token;
-            console.log('Access token extracted:', !!accessToken);
-            console.log('Token length:', accessToken?.length || 0);
+            console.log('Access token extraído:', !!accessToken);
+            console.log('Access token length:', accessToken?.length || 0);
+            console.log('Access token prefix:', accessToken?.substring(0, 20) + '...');
           }
         } catch (e) {
           console.error('Failed to parse stored token:', e);
         }
+      } else {
+        console.error('Nenhuma chave sb-*-auth-token encontrada');
+        // Tentar outras chaves comuns
+        const possibleKeys = storageKeys.filter(k => k.includes('supabase') || k.includes('auth') || k.includes('token'));
+        console.log('Chaves possíveis:', possibleKeys);
       }
       
       if (!accessToken) {
