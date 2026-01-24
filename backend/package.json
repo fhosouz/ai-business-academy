@@ -10,7 +10,7 @@
     "dev": "tsx watch src/api/server.ts",
     "start": "node dist/server.js",
     "server": "node dist/server.js",
-    "build": "tsc src/api/server.ts --outDir dist --module es2020 --target es2020",
+    "build": "tsc",
     "lint": "eslint ."
   },
   "dependencies": {
