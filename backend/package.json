@@ -1,5 +1,5 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "ai-business-academy-backend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,14 +7,11 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "server": "node src/api/server.mjs",
-    "server:dev": "tsx watch src/api/app.ts",
-    "server:build": "tsc src/api/app.ts --outDir dist --module commonjs --target es2020"
+    "dev": "tsx watch src/api/server.ts",
+    "start": "node dist/server.js",
+    "server": "node dist/server.js",
+    "build": "tsc src/api/server.ts --outDir dist --module commonjs --target es2020",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
