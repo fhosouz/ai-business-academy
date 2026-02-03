@@ -178,6 +178,64 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+// Google OAuth - GET para iniciar fluxo OAuth
+app.get('/api/auth/google', (req, res) => {
+  // Redirecionar para Supabase OAuth
+  const supabaseUrl = process.env.SUPABASE_URL!;
+  const redirectUri = `${process.env.FRONTEND_URL || 'https://automatizeai-academy.netlify.app'}/auth/callback`;
+  
+  const authUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${redirectUri}&client_id=${process.env.SUPABASE_CLIENT_ID}&response_type=code&access_type=offline`;
+  
+  res.redirect(authUrl);
+});
+
+// Google OAuth Callback - POST para processar token
+app.post('/api/auth/google', async (req, res) => {
+  try {
+    const { token } = req.body;
+    
+    if (!token) {
+      return res.status(400).json({ error: 'Google token is required' });
+    }
+    
+    // Verificar token com Supabase
+    const { data, error } = await supabase.auth.signInWithIdToken({
+      provider: 'google',
+      token: token,
+    });
+    
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    // Buscar perfil do usuário
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', data.user?.id)
+      .single();
+    
+    res.json({
+      user: {
+        id: data.user?.id,
+        email: data.user?.email,
+        full_name: profile?.full_name || data.user?.user_metadata?.full_name,
+        avatar_url: data.user?.user_metadata?.avatar_url,
+        role: profile?.role || 'user',
+        plan: profile?.plan || 'free'
+      },
+      session: {
+        access_token: data.session?.access_token,
+        refresh_token: data.session?.refresh_token,
+        expires_at: data.session?.expires_at
+      }
+    });
+  } catch (error) {
+    console.error('Google auth error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Generic DB endpoint (used by frontend supabase shim)
 app.post('/api/db/query', async (req, res) => {
   try {
