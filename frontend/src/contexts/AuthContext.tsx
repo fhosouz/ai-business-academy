@@ -38,29 +38,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const checkAuthStatus = async () => {
+    console.log('=== AUTH CONTEXT: CHECK AUTH STATUS START ===');
     try {
       const token = localStorage.getItem('auth_token');
+      console.log('Token exists:', !!token);
+      
       if (!token) {
+        console.log('No token found, setting loading to false');
         setLoading(false);
         return;
       }
 
+      console.log('Making request to /api/auth/me');
       const response = await fetch('/api/auth/me', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
+      console.log('Auth response status:', response.status);
+      
       if (response.ok) {
         const { data } = await response.json();
+        console.log('Auth successful, user data:', data.user);
         setUser(data.user);
       } else {
+        console.log('Auth failed, removing token');
         localStorage.removeItem('auth_token');
+        setUser(null);
       }
     } catch (error) {
       console.error('Error checking auth status:', error);
       localStorage.removeItem('auth_token');
+      setUser(null);
     } finally {
+      console.log('=== AUTH CONTEXT: CHECK AUTH STATUS END ===');
       setLoading(false);
     }
   };

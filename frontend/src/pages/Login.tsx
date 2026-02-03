@@ -13,7 +13,7 @@ import { SignUpForm } from '@/components/auth/SignUpForm';
 import { useAuthForm } from '@/hooks/useAuthForm';
 
 const Login = () => {
-  const { user, loading, signInWithGoogle } = useAuth();
+  const { user, loading, signInWithGoogle, checkAuthStatus } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -81,10 +81,16 @@ const Login = () => {
         description: "Redirecionando para a plataforma...",
       });
 
-      // Armazenar token e redirecionar
+      // Armazenar token e atualizar contexto
       if (data.token) {
         localStorage.setItem('auth_token', data.token);
-        navigate('/');
+        
+        // Atualizar contexto de autenticação imediatamente
+        await checkAuthStatus();
+        
+        console.log('=== EMAIL LOGIN: TOKEN STORED AND AUTH CHECKED ===');
+        console.log('Navigating to home page...');
+        navigate('/', { replace: true });
       }
 
     } catch (error) {
