@@ -8,8 +8,8 @@
   },
   "scripts": {
     "dev": "tsx watch src/api/server.ts",
-    "start": "node dist/server.js",
-    "server": "node dist/server.js",
+    "start": "node dist/api/server.js",
+    "server": "node dist/api/server.js",
     "build": "tsc",
     "lint": "eslint ."
   },
