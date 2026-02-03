@@ -189,6 +189,8 @@ app.get('/api/auth/google', async (req, res) => {
     // Gerar state CSRF para segurança
     const state = Math.random().toString(36).substring(2, 15);
     
+    console.log('🔐 OAuth Init - Generated state:', state);
+    
     // Armazenar state em cookie (simples e seguro)
     res.cookie('oauth_state', state, { 
       httpOnly: true, 
@@ -196,11 +198,17 @@ app.get('/api/auth/google', async (req, res) => {
       maxAge: 600000 // 10 minutos
     });
     
+    const frontendUrl = process.env.FRONTEND_URL || 'https://automatizeai-academy.netlify.app';
+    const redirectUri = `${frontendUrl}/auth/callback`;
+    
+    console.log('🌐 OAuth Init - Frontend URL:', frontendUrl);
+    console.log('🔄 OAuth Init - Redirect URI:', redirectUri);
+    
     // Usar Supabase client para gerar URL OAuth (mais seguro)
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${process.env.FRONTEND_URL || 'https://automatizeai-academy.netlify.app'}/auth/callback`,
+        redirectTo: redirectUri,
         queryParams: {
           state: state
         }
@@ -208,14 +216,16 @@ app.get('/api/auth/google', async (req, res) => {
     });
     
     if (error) {
-      console.error('OAuth URL generation error:', error);
+      console.error('❌ OAuth URL generation error:', error);
       return res.status(500).json({ error: 'Failed to generate OAuth URL' });
     }
+    
+    console.log('✅ OAuth Init - Generated URL:', data.url);
     
     // Redirecionar para URL gerada pelo Supabase
     res.redirect(data.url);
   } catch (error) {
-    console.error('OAuth init error:', error);
+    console.error('❌ OAuth init error:', error);
     res.status(500).json({ error: 'Failed to initiate OAuth' });
   }
 });
@@ -225,6 +235,10 @@ app.post('/api/auth/google', async (req, res) => {
   try {
     const { code, state } = req.body;
     
+    console.log('🔄 OAuth Callback - Received code:', !!code);
+    console.log('🔄 OAuth Callback - Received state:', state);
+    console.log('🍪 OAuth Callback - Stored state:', req.cookies?.oauth_state);
+    
     if (!code) {
       return res.status(400).json({ error: 'Authorization code is required' });
     }
@@ -232,16 +246,20 @@ app.post('/api/auth/google', async (req, res) => {
     // Validar CSRF state do cookie
     const storedState = req.cookies?.oauth_state;
     if (!state || !storedState || state !== storedState) {
+      console.error('❌ OAuth Callback - Invalid state mismatch');
       return res.status(400).json({ error: 'Invalid OAuth state' });
     }
     
     // Limpar cookie após validação
     res.clearCookie('oauth_state');
     
+    console.log('✅ OAuth Callback - State validated, exchanging code...');
+    
     // Trocar code por tokens com Supabase
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     
     if (error) {
+      console.error('❌ OAuth Callback - Code exchange error:', error);
       return res.status(400).json({ error: error.message });
     }
     
