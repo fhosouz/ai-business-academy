@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 
 // Carregar variáveis de ambiente do backend
 dotenv.config();
@@ -16,8 +17,12 @@ const supabase = createClient(
 );
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: ['https://automatizeai-academy.netlify.app', 'http://localhost:8080'],
+  credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 type DbFilterOp = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'in';
 
@@ -223,6 +228,15 @@ app.post('/api/auth/google', async (req, res) => {
     if (!code) {
       return res.status(400).json({ error: 'Authorization code is required' });
     }
+    
+    // Validar CSRF state do cookie
+    const storedState = req.cookies?.oauth_state;
+    if (!state || !storedState || state !== storedState) {
+      return res.status(400).json({ error: 'Invalid OAuth state' });
+    }
+    
+    // Limpar cookie após validação
+    res.clearCookie('oauth_state');
     
     // Trocar code por tokens com Supabase
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
