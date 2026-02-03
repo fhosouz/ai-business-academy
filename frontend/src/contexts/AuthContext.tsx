@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signInWithGoogle = async () => {
     try {
-      // Redirecionar para backend OAuth
+      // Backend OAuth proxy - mais seguro
       window.location.href = '/api/auth/google';
     } catch (error) {
       console.error('Error signing in with Google:', error);

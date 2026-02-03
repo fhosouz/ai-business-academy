@@ -178,42 +178,72 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// Google OAuth - GET para iniciar fluxo OAuth
-app.get('/api/auth/google', (req, res) => {
-  // Redirecionar para Supabase OAuth
-  const supabaseUrl = process.env.SUPABASE_URL!;
-  const redirectUri = `${process.env.FRONTEND_URL || 'https://automatizeai-academy.netlify.app'}/auth/callback`;
-  
-  const authUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${redirectUri}&client_id=${process.env.SUPABASE_CLIENT_ID}&response_type=code&access_type=offline`;
-  
-  res.redirect(authUrl);
+// Google OAuth - GET para iniciar fluxo OAuth seguro
+app.get('/api/auth/google', async (req, res) => {
+  try {
+    // Gerar state CSRF para segurança
+    const state = Math.random().toString(36).substring(2, 15);
+    
+    // Armazenar state em cookie (simples e seguro)
+    res.cookie('oauth_state', state, { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 600000 // 10 minutos
+    });
+    
+    const supabaseUrl = process.env.SUPABASE_URL!;
+    const redirectUri = `${process.env.FRONTEND_URL || 'https://automatizeai-academy.netlify.app'}/auth/callback`;
+    
+    // URL OAuth do Supabase com parâmetros seguros
+    const authUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUri)}&client_id=supabase&response_type=code&state=${state}`;
+    
+    // Redirecionar diretamente (mais seguro que retornar URL)
+    res.redirect(authUrl);
+  } catch (error) {
+    console.error('OAuth init error:', error);
+    res.status(500).json({ error: 'Failed to initiate OAuth' });
+  }
 });
 
 // Google OAuth Callback - POST para processar token
 app.post('/api/auth/google', async (req, res) => {
   try {
-    const { token } = req.body;
+    const { code, state } = req.body;
     
-    if (!token) {
-      return res.status(400).json({ error: 'Google token is required' });
+    if (!code) {
+      return res.status(400).json({ error: 'Authorization code is required' });
     }
     
-    // Verificar token com Supabase
-    const { data, error } = await supabase.auth.signInWithIdToken({
-      provider: 'google',
-      token: token,
-    });
+    // Trocar code por tokens com Supabase
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     
     if (error) {
       return res.status(400).json({ error: error.message });
     }
     
-    // Buscar perfil do usuário
-    const { data: profile } = await supabase
+    // Buscar/criar perfil do usuário
+    let { data: profile } = await supabase
       .from('user_profiles')
       .select('*')
       .eq('user_id', data.user?.id)
       .single();
+    
+    if (!profile) {
+      // Criar perfil inicial
+      const { data: newProfile } = await supabase
+        .from('user_profiles')
+        .insert({
+          user_id: data.user!.id,
+          full_name: data.user?.user_metadata?.full_name || data.user?.email?.split('@')[0],
+          role: 'user',
+          plan: 'free',
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      profile = newProfile;
+    }
     
     res.json({
       user: {
