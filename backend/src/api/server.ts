@@ -191,14 +191,24 @@ app.get('/api/auth/google', async (req, res) => {
       maxAge: 600000 // 10 minutos
     });
     
-    const supabaseUrl = process.env.SUPABASE_URL!;
-    const redirectUri = `${process.env.FRONTEND_URL || 'https://automatizeai-academy.netlify.app'}/auth/callback`;
+    // Usar Supabase client para gerar URL OAuth (mais seguro)
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${process.env.FRONTEND_URL || 'https://automatizeai-academy.netlify.app'}/auth/callback`,
+        queryParams: {
+          state: state
+        }
+      }
+    });
     
-    // URL OAuth do Supabase com parâmetros seguros
-    const authUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUri)}&client_id=supabase&response_type=code&state=${state}`;
+    if (error) {
+      console.error('OAuth URL generation error:', error);
+      return res.status(500).json({ error: 'Failed to generate OAuth URL' });
+    }
     
-    // Redirecionar diretamente (mais seguro que retornar URL)
-    res.redirect(authUrl);
+    // Redirecionar para URL gerada pelo Supabase
+    res.redirect(data.url);
   } catch (error) {
     console.error('OAuth init error:', error);
     res.status(500).json({ error: 'Failed to initiate OAuth' });
