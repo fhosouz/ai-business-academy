@@ -12,6 +12,18 @@ interface WelcomeSectionProps {
 const WelcomeSection = ({ userProgress }: WelcomeSectionProps) => {
   const { user } = useAuth();
 
+  // Verificação de segurança para evitar erros de undefined
+  if (!userProgress) {
+    return (
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl p-8 text-white">
+        <div className="animate-pulse">
+          <div className="h-8 bg-white/20 rounded mb-2 w-1/3"></div>
+          <div className="h-6 bg-white/20 rounded w-1/2"></div>
+        </div>
+      </div>
+    );
+  }
+
   // Função para extrair nome do usuário
   const getUserDisplayName = () => {
     if (!user) return "Usuário";

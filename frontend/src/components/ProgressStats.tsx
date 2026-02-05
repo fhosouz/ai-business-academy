@@ -21,8 +21,24 @@ interface ProgressStatsProps {
 }
 
 const ProgressStats = ({ userProgress }: ProgressStatsProps) => {
-  const completionRate = (userProgress.completedCourses / userProgress.totalCourses) * 100;
-  const totalPoints = userProgress.totalPoints || userProgress.totalXP;
+  // Verificação de segurança para evitar erros de undefined
+  if (!userProgress || userProgress.loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {[...Array(4)].map((_, index) => (
+          <div key={index} className="bg-gray-100 rounded-lg p-6 animate-pulse">
+            <div className="h-4 bg-gray-300 rounded mb-2"></div>
+            <div className="h-8 bg-gray-300 rounded"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const completionRate = userProgress.totalCourses > 0 
+    ? (userProgress.completedCourses / userProgress.totalCourses) * 100 
+    : 0;
+  const totalPoints = userProgress.totalPoints || userProgress.totalXP || 0;
   const currentLevelProgress = userProgress.progressToNext || 0;
 
   const stats = [
