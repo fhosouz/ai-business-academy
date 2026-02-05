@@ -9,11 +9,11 @@ import LessonList from "./lesson/LessonList";
 import { Lesson } from "./lesson/types";
 
 interface LessonManagerProps {
-  courseId: string;
-  courseName: string;
+  courseId?: string;
+  courseName?: string;
 }
 
-const LessonManager = ({ courseId, courseName }: LessonManagerProps) => {
+const LessonManager = ({ courseId = '', courseName = '' }: LessonManagerProps) => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [courses, setCourses] = useState<{id: string; title: string; category_id: string}[]>([]);
   const [isAddingLesson, setIsAddingLesson] = useState(false);

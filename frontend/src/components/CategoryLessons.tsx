@@ -123,8 +123,8 @@ const CategoryLessons = ({ categoryId, categoryName, courseId, onBack, onLessonS
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('name')
-        .eq('id', user.id)
+        .select('display_name')
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (error) throw error;
@@ -211,7 +211,7 @@ const CategoryLessons = ({ categoryId, categoryName, courseId, onBack, onLessonS
           <BadgeGenerator
             courseName={categoryName}
             completionDate={new Date().toLocaleDateString('pt-BR')}
-            userName={userProfile.name || user.email?.split('@')[0] || 'Usuário'}
+            userName={userProfile.display_name || user.email?.split('@')[0] || 'Usuário'}
             skills={getCourseSkills()}
           />
         )}

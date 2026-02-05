@@ -82,10 +82,7 @@ const AdminTabsContent = ({ isAdmin, roleLoading, adminView, setAdminView }: Adm
         </TabsContent>
 
         <TabsContent value="lessons">
-          <LessonManager 
-            courseId={1} 
-            courseName="IA Generativa para Negócios" 
-          />
+          <LessonManager />
         </TabsContent>
 
         <TabsContent value="articles">

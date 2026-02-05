@@ -17,7 +17,7 @@ interface Course {
 }
 
 interface LessonFormProps {
-  courseId: string;
+  courseId?: string;
   courses: Course[];
   onLessonCreated: () => void;
   lessonsCount: number;
