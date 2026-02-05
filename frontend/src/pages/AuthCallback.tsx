@@ -70,7 +70,7 @@ const AuthCallback: React.FC = () => {
           if (session?.user) {
             console.log('Successfully authenticated:', session.user.email);
             console.log('Redirecting to dashboard...');
-            navigate('/dashboard');
+            navigate('/'); // Redirecionar para a raiz que é o dashboard
           } else {
             console.error('No session found after OAuth');
             alert('Login não concluído. Tente novamente.');
