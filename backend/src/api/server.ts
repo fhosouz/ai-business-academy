@@ -186,6 +186,10 @@ app.post('/api/auth/register', async (req, res) => {
 // Google OAuth - GET para iniciar fluxo OAuth seguro
 app.get('/api/auth/google', async (req, res) => {
   try {
+    console.log('🔐 OAuth Init - Request received');
+    console.log('🔐 OAuth Init - Headers:', req.headers);
+    console.log('🔐 OAuth Init - Query params:', req.query);
+    
     // Gerar state CSRF para segurança
     const state = Math.random().toString(36).substring(2, 15);
     
@@ -195,7 +199,8 @@ app.get('/api/auth/google', async (req, res) => {
     res.cookie('oauth_state', state, { 
       httpOnly: true, 
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 600000 // 10 minutos
+      maxAge: 600000, // 10 minutos
+      sameSite: 'lax'
     });
     
     const frontendUrl = process.env.FRONTEND_URL || 'https://automatizeai-academy.netlify.app';
@@ -203,6 +208,7 @@ app.get('/api/auth/google', async (req, res) => {
     
     console.log('🌐 OAuth Init - Frontend URL:', frontendUrl);
     console.log('🔄 OAuth Init - Redirect URI:', redirectUri);
+    console.log('🔧 OAuth Init - Supabase URL:', process.env.SUPABASE_URL);
     
     // Usar Supabase client para gerar URL OAuth (mais seguro)
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -217,7 +223,7 @@ app.get('/api/auth/google', async (req, res) => {
     
     if (error) {
       console.error('❌ OAuth URL generation error:', error);
-      return res.status(500).json({ error: 'Failed to generate OAuth URL' });
+      return res.status(500).json({ error: 'Failed to generate OAuth URL', details: error.message });
     }
     
     console.log('✅ OAuth Init - Generated URL:', data.url);
@@ -226,13 +232,17 @@ app.get('/api/auth/google', async (req, res) => {
     res.redirect(data.url);
   } catch (error) {
     console.error('❌ OAuth init error:', error);
-    res.status(500).json({ error: 'Failed to initiate OAuth' });
+    res.status(500).json({ error: 'Failed to initiate OAuth', details: error.message });
   }
 });
 
 // Google OAuth Callback - POST para processar token
 app.post('/api/auth/google', async (req, res) => {
   try {
+    console.log('🔄 OAuth Callback - Request received');
+    console.log('🔄 OAuth Callback - Headers:', req.headers);
+    console.log('🔄 OAuth Callback - Body:', req.body);
+    
     const { code, state } = req.body;
     
     console.log('🔄 OAuth Callback - Received code:', !!code);
@@ -240,6 +250,7 @@ app.post('/api/auth/google', async (req, res) => {
     console.log('🍪 OAuth Callback - Stored state:', req.cookies?.oauth_state);
     
     if (!code) {
+      console.error('❌ OAuth Callback - No code received');
       return res.status(400).json({ error: 'Authorization code is required' });
     }
     
@@ -247,6 +258,8 @@ app.post('/api/auth/google', async (req, res) => {
     const storedState = req.cookies?.oauth_state;
     if (!state || !storedState || state !== storedState) {
       console.error('❌ OAuth Callback - Invalid state mismatch');
+      console.error('Expected state:', storedState);
+      console.error('Received state:', state);
       return res.status(400).json({ error: 'Invalid OAuth state' });
     }
     
@@ -260,8 +273,12 @@ app.post('/api/auth/google', async (req, res) => {
     
     if (error) {
       console.error('❌ OAuth Callback - Code exchange error:', error);
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message, details: error });
     }
+    
+    console.log('✅ OAuth Callback - Code exchange successful');
+    console.log('👤 OAuth Callback - User ID:', data.user?.id);
+    console.log('📧 OAuth Callback - User email:', data.user?.email);
     
     // Buscar/criar perfil do usuário
     let { data: profile } = await supabase
@@ -271,6 +288,7 @@ app.post('/api/auth/google', async (req, res) => {
       .single();
     
     if (!profile) {
+      console.log('👤 OAuth Callback - Creating new user profile...');
       // Criar perfil inicial
       const { data: newProfile } = await supabase
         .from('user_profiles')
@@ -285,9 +303,12 @@ app.post('/api/auth/google', async (req, res) => {
         .single();
       
       profile = newProfile;
+      console.log('✅ OAuth Callback - Profile created:', profile);
+    } else {
+      console.log('👤 OAuth Callback - Existing profile found:', profile);
     }
     
-    res.json({
+    const responseData = {
       user: {
         id: data.user?.id,
         email: data.user?.email,
@@ -301,10 +322,13 @@ app.post('/api/auth/google', async (req, res) => {
         refresh_token: data.session?.refresh_token,
         expires_at: data.session?.expires_at
       }
-    });
+    };
+    
+    console.log('✅ OAuth Callback - Sending response to frontend');
+    res.json(responseData);
   } catch (error) {
-    console.error('Google auth error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('❌ OAuth Callback error:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 

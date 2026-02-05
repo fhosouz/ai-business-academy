@@ -49,8 +49,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      console.log('Making request to /api/auth/me');
-      const response = await fetch('/api/auth/me', {
+      // Usar URL absoluta do backend em produção
+      const isProduction = window.location.hostname !== 'localhost';
+      const backendUrl = isProduction 
+        ? 'https://ai-business-academy-backend.onrender.com/api/auth/me'
+        : '/api/auth/me';
+      
+      console.log('Making request to:', backendUrl);
+      
+      const response = await fetch(backendUrl, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -78,12 +85,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signInWithGoogle = async () => {
+    console.log('=== AUTH CONTEXT: GOOGLE SIGN IN START ===');
     try {
-      // Backend OAuth proxy - mais seguro
-      window.location.href = '/api/auth/google';
+      console.log('Redirecting to backend OAuth endpoint...');
+      // Usar URL absoluta do backend em produção
+      const isProduction = window.location.hostname !== 'localhost';
+      const backendUrl = isProduction 
+        ? 'https://ai-business-academy-backend.onrender.com/api/auth/google'
+        : '/api/auth/google';
+      
+      console.log('Using backend URL:', backendUrl);
+      window.location.href = backendUrl;
     } catch (error) {
       console.error('Error signing in with Google:', error);
       throw new Error('Não foi possível realizar a autenticação');
+    } finally {
+      console.log('=== AUTH CONTEXT: GOOGLE SIGN IN END ===');
     }
   };
 
