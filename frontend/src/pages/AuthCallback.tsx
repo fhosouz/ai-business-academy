@@ -1,10 +1,14 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
-  const { checkAuthStatus } = useAuth();
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
@@ -18,11 +22,30 @@ const AuthCallback: React.FC = () => {
         const state = urlParams.get('state');
         const error = urlParams.get('error');
         const errorDescription = urlParams.get('error_description');
+        const errorCode = urlParams.get('error_code');
 
-        console.log('URL Params:', { code: !!code, state, error, errorDescription });
+        console.log('URL Params:', { 
+          code: !!code, 
+          state, 
+          error, 
+          errorDescription, 
+          errorCode 
+        });
 
+        // Se houver erro, mostrar mensagem e redirecionar
         if (error) {
-          console.error('OAuth error:', error, errorDescription);
+          console.error('OAuth error:', error, errorDescription, errorCode);
+          
+          // Se for bad_oauth_state, tentar novamente
+          if (errorCode === 'bad_oauth_state') {
+            console.log('Bad OAuth state detected, redirecting to login...');
+            alert('Erro na autenticação. Por favor, tente fazer login novamente.');
+            navigate('/login');
+            return;
+          }
+          
+          // Outros erros
+          alert(`Erro de autenticação: ${errorDescription || error}`);
           navigate('/login');
           return;
         }
@@ -33,56 +56,33 @@ const AuthCallback: React.FC = () => {
           return;
         }
 
-        console.log('Making request to backend with code...');
+        console.log('Processing OAuth callback with Supabase...');
         
-        // Usar URL absoluta do backend em produção
-        const isProduction = window.location.hostname !== 'localhost';
-        const backendUrl = isProduction 
-          ? 'https://ai-business-academy-backend.onrender.com/api/auth/google'
-          : '/api/auth/google';
+        // O Supabase vai processar o callback automaticamente
+        // Apenas aguardar a sessão ser estabelecida
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
-        console.log('Using backend URL:', backendUrl);
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        // Enviar code para backend processar
-        const response = await fetch(backendUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ code, state }),
-        });
-
-        console.log('Backend response status:', response.status);
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('Backend error:', errorData);
+        if (sessionError) {
+          console.error('Error getting session after callback:', sessionError);
+          alert('Erro ao processar login. Tente novamente.');
           navigate('/login');
           return;
         }
 
-        const data = await response.json();
-        console.log('Backend response data:', data);
-        
-        // Armazenar token
-        if (data.session?.access_token) {
-          localStorage.setItem('auth_token', data.session.access_token);
-          console.log('Token stored successfully');
+        if (session?.user) {
+          console.log('Successfully authenticated:', session.user.email);
+          console.log('Redirecting to dashboard...');
+          navigate('/dashboard');
         } else {
-          console.error('No access token in response');
+          console.error('No session found after callback');
+          alert('Login não concluído. Tente novamente.');
           navigate('/login');
-          return;
         }
-
-        console.log('Checking auth status...');
-        // Verificar status de autenticação
-        await checkAuthStatus();
-
-        console.log('Redirecting to dashboard...');
-        // Redirecionar para dashboard
-        navigate('/dashboard');
       } catch (error) {
         console.error('Callback error:', error);
+        alert('Erro durante o processamento do login. Tente novamente.');
         navigate('/login');
       } finally {
         console.log('=== AUTH CALLBACK: END ===');
@@ -90,7 +90,7 @@ const AuthCallback: React.FC = () => {
     };
 
     handleOAuthCallback();
-  }, [navigate, checkAuthStatus]);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
