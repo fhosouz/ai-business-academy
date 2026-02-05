@@ -45,7 +45,7 @@ const NotificationBell = () => {
         .from('notifications')
         .select('id, title, message, created_at, target_audience')
         .eq('is_active', true)
-        .or(`target_audience.eq.all,target_audience.eq.${plan}`)
+        .in('target_audience', ['all', plan])
         .order('created_at', { ascending: false })
         .limit(10);
 
@@ -71,6 +71,9 @@ const NotificationBell = () => {
       setUnreadCount(notificationsWithReadStatus.filter(n => !n.is_read).length);
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      // Em caso de erro, definir como array vazio para não quebrar a UI
+      setNotifications([]);
+      setUnreadCount(0);
     } finally {
       setLoading(false);
     }
