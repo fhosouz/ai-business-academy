@@ -44,7 +44,9 @@ function getAuthTokenFromStorage(): string | null {
 
 async function callDb(payload: DbQueryPayload) {
   const token = getAuthTokenFromStorage();
-  const res = await fetch('/api/db/query', {
+  const apiUrl = import.meta.env.VITE_API_URL || 'https://ai-business-academy-backend.onrender.com/api';
+  
+  const res = await fetch(`${apiUrl}/db/query`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

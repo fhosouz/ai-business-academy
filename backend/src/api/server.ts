@@ -99,6 +99,16 @@ function enforceUserScope(payload: DbQueryPayload, userId: string) {
     'payments',
   ]);
 
+  const publicTables = new Set([
+    'courses',
+    'categories',
+    'lessons',
+    'articles',
+  ]);
+
+  // Se for uma tabela pública, não aplicar scope de usuário
+  if (publicTables.has(payload.table)) return payload;
+
   if (!scopedTables.has(payload.table)) return payload;
 
   const filters = Array.isArray(payload.filters) ? [...payload.filters] : [];
