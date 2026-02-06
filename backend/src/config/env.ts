@@ -9,37 +9,43 @@ const SUPABASE_CONFIG = {
 };
 
 export const env = {
-  // Supabase - usar variáveis do Netlify
-  SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || SUPABASE_CONFIG.URL,
-  SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || SUPABASE_CONFIG.ANON_KEY,
+  // Supabase
+  SUPABASE_URL: process.env.SUPABASE_URL || SUPABASE_CONFIG.URL,
+  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || SUPABASE_CONFIG.ANON_KEY,
   
-  // API URL - variável do Netlify
-  VITE_API_URL: import.meta.env.VITE_API_URL || 'https://ai-business-academy-backend.onrender.com/api',
+  // API URLs
+  BACKEND_URL: process.env.BACKEND_URL || 'https://ai-business-academy-backend.onrender.com',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'https://automatizeai-academy.netlify.app',
+  
+  // Mercado Pago
+  MERCADO_PAGO_ACCESS_TOKEN: process.env.MERCADO_PAGO_ACCESS_TOKEN,
   
   // Analytics (opcional)
-  GOOGLE_ANALYTICS_ID: import.meta.env.VITE_GOOGLE_ANALYTICS_ID,
+  GOOGLE_ANALYTICS_ID: process.env.GOOGLE_ANALYTICS_ID,
   
   // Flags
-  IS_DEVELOPMENT: import.meta.env.DEV,
-  IS_PRODUCTION: import.meta.env.PROD,
+  IS_DEVELOPMENT: process.env.NODE_ENV === 'development',
+  IS_PRODUCTION: process.env.NODE_ENV === 'production',
   
   // Rate Limiting
-  RATE_LIMIT_REQUESTS: parseInt(import.meta.env.VITE_RATE_LIMIT_REQUESTS || '100'),
-  RATE_LIMIT_WINDOW: parseInt(import.meta.env.VITE_RATE_LIMIT_WINDOW || '900000'), // 15 minutes
+  RATE_LIMIT_REQUESTS: parseInt(process.env.RATE_LIMIT_REQUESTS || '100'),
+  RATE_LIMIT_WINDOW: parseInt(process.env.RATE_LIMIT_WINDOW || '900000'), // 15 minutes
   
   // Cache
-  CACHE_TTL: parseInt(import.meta.env.VITE_CACHE_TTL || '300'), // 5 minutes
+  CACHE_TTL: parseInt(process.env.CACHE_TTL || '300'), // 5 minutes
   
   // Security
-  CORS_ORIGINS: import.meta.env.VITE_CORS_ORIGINS?.split(',') || ['http://localhost:3000'],
-  SESSION_TIMEOUT: parseInt(import.meta.env.VITE_SESSION_TIMEOUT || '3600000'), // 1 hour
+  CORS_ORIGINS: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'],
+  SESSION_TIMEOUT: parseInt(process.env.SESSION_TIMEOUT || '3600000'), // 1 hour
 } as const;
 
 // Log de configuração
 console.log('=== CONFIGURAÇÃO CARREGADA ===');
 console.log('SUPABASE_URL:', env.SUPABASE_URL ? '✅ CONFIGURADO' : '❌ ERRO');
 console.log('SUPABASE_ANON_KEY:', env.SUPABASE_ANON_KEY ? '✅ CONFIGURADO' : '❌ ERRO');
-console.log('VITE_API_URL:', env.VITE_API_URL);
+console.log('BACKEND_URL:', env.BACKEND_URL);
+console.log('FRONTEND_URL:', env.FRONTEND_URL);
+console.log('MERCADO_PAGO_ACCESS_TOKEN:', env.MERCADO_PAGO_ACCESS_TOKEN ? '✅ CONFIGURADO' : '❌ NÃO CONFIGURADO');
 console.log('=== CONFIGURAÇÃO CONCLUÍDA ===');
 
 // Type safety para environment
