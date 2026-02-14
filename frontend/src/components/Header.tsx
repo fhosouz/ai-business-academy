@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import SearchComponent from "./SearchComponent";
 import NotificationBell from "./NotificationBell";
+import { useEffect } from "react";
 
 interface HeaderProps {
   onResultSelect?: (result: any) => void;
@@ -20,6 +21,23 @@ const Header = ({ onResultSelect }: HeaderProps) => {
   console.log('=== HEADER RENDER ===');
   console.log('User:', user?.email);
   console.log('Plan:', plan);
+
+  useEffect(() => {
+    console.log('=== HEADER MOUNTED ===');
+    console.log('Header element should be visible now');
+    
+    // Verificar se o header está no DOM
+    setTimeout(() => {
+      const header = document.querySelector('header');
+      if (header) {
+        console.log('Header found in DOM:', header);
+        console.log('Header styles:', window.getComputedStyle(header));
+        console.log('Header visible:', window.getComputedStyle(header).display !== 'none');
+      } else {
+        console.log('Header NOT found in DOM!');
+      }
+    }, 100);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -39,7 +57,10 @@ const Header = ({ onResultSelect }: HeaderProps) => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <header 
+      className="bg-white border-b border-gray-200 sticky top-0 z-50"
+      style={{ backgroundColor: 'white', borderBottom: '1px solid rgb(229 231 235)' }}
+    >
       <div className="container mx-auto px-2 md:px-4 py-3 md:py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
