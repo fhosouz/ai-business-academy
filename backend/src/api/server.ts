@@ -3,7 +3,7 @@ import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-import { paymentsRoutes } from './routes/payments.routes';
+import { paymentsRoutes } from './routes/payments.routes.js';
 
 // Carregar variáveis de ambiente do backend
 dotenv.config();
