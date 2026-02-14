@@ -18,7 +18,14 @@ router.post('/create-preference', async (req, res) => {
     console.log('Course:', courseName);
     console.log('Payer:', payerInfo);
     console.log('Environment:', process.env.NODE_ENV);
+    console.log('All ENV vars:', {
+      MERCADO_PAGO_ACCESS_TOKEN: process.env.MERCADO_PAGO_ACCESS_TOKEN ? 'CONFIGURED' : 'NOT CONFIGURED',
+      NODE_ENV: process.env.NODE_ENV,
+      BACKEND_URL: process.env.BACKEND_URL,
+      FRONTEND_URL: process.env.FRONTEND_URL
+    });
     console.log('MP Token Configured:', !!process.env.MERCADO_PAGO_ACCESS_TOKEN);
+    console.log('MP Token Length:', process.env.MERCADO_PAGO_ACCESS_TOKEN?.length || 0);
 
     const prices = {
       premium: 99.90,
