@@ -21,8 +21,8 @@ router.post('/create-preference', async (req, res) => {
     // Em produção, aqui você integraria com a API real do Mercado Pago
     const preferenceId = `preference_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    // URL de teste do Mercado Pago Sandbox
-    const testUrl = `https://www.mercadopago.com.br/checkout/v1/redirect?preference_id=${preferenceId}`;
+    // URL de teste do Mercado Pago Sandbox (corrigida)
+    const testUrl = `https://sandbox.mercadopago.com.br/checkout/v1/redirect?preference_id=${preferenceId}`;
     
     console.log('=== PREFERENCE CREATED (TEST MODE) ===');
     console.log('Preference ID:', preferenceId);

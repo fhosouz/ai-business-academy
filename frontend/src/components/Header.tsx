@@ -17,6 +17,10 @@ const Header = ({ onResultSelect }: HeaderProps) => {
   const { user, signOut } = useAuth();
   const { plan } = useUserPlan();
 
+  console.log('=== HEADER RENDER ===');
+  console.log('User:', user?.email);
+  console.log('Plan:', plan);
+
   const handleSignOut = async () => {
     await signOut();
   };
