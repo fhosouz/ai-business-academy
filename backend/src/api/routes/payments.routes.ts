@@ -1,8 +1,14 @@
 import { Router } from 'express';
+import { MercadoPagoConfig, Preference } from 'mercadopago';
 
 const router = Router();
 
-// Criar preferência de pagamento (versão temporária para testes)
+// Configurar Mercado Pago
+const client = new MercadoPagoConfig({ 
+  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || 'TEST-ACCESS-TOKEN' 
+});
+
+// Criar preferência de pagamento (PRODUÇÃO)
 router.post('/create-preference', async (req, res) => {
   try {
     const { planType, courseName, payerInfo, returnUrl, failureUrl } = req.body;
@@ -11,29 +17,70 @@ router.post('/create-preference', async (req, res) => {
     console.log('Plan:', planType);
     console.log('Course:', courseName);
     console.log('Payer:', payerInfo);
+    console.log('Environment:', process.env.NODE_ENV);
+    console.log('MP Token Configured:', !!process.env.MERCADO_PAGO_ACCESS_TOKEN);
 
     const prices = {
       premium: 99.90,
       enterprise: 299.90
     };
 
-    // Simular criação de preferência do Mercado Pago
-    // Em produção, aqui você integraria com a API real do Mercado Pago
-    const preferenceId = `preference_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Criar preferência REAL do Mercado Pago
+    const preferenceData = {
+      items: [
+        {
+          id: `item_${planType}_${Date.now()}`,
+          title: `Plano ${planType.toUpperCase()} - AI Business Academy`,
+          description: `Acesso ao plano ${planType} ${courseName ? `para o curso ${courseName}` : ''}`,
+          unit_price: prices[planType] || prices.premium,
+          quantity: 1,
+          currency_id: 'BRL'
+        }
+      ],
+      payer: {
+        name: payerInfo?.name || 'Usuario',
+        email: payerInfo?.email || 'user@example.com'
+      },
+      back_urls: {
+        success: returnUrl || `${process.env.FRONTEND_URL}/payment/success`,
+        failure: failureUrl || `${process.env.FRONTEND_URL}/payment/failure`,
+        pending: `${process.env.FRONTEND_URL}/payment/pending`
+      },
+      auto_return: 'approved',
+      external_reference: `${planType}_${Date.now()}`,
+      notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`
+    };
+
+    let response;
     
-    // URL de teste do Mercado Pago Sandbox (corrigida)
-    const testUrl = `https://sandbox.mercadopago.com.br/checkout/v1/redirect?preference_id=${preferenceId}`;
+    if (process.env.MERCADO_PAGO_ACCESS_TOKEN && process.env.NODE_ENV === 'production') {
+      // PRODUÇÃO - Usar API real do Mercado Pago
+      console.log('=== CREATING REAL MERCADO PAGO PREFERENCE ===');
+      const preference = new Preference(client);
+      response = await preference.create({ body: preferenceData });
+    } else {
+      // DESENVOLVIMENTO/FALHA TOKEN - Simular
+      console.log('=== CREATING SIMULATED PREFERENCE ===');
+      const preferenceId = `preference_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      response = {
+        body: {
+          id: preferenceId,
+          init_point: `https://sandbox.mercadopago.com.br/checkout/v1/redirect?preference_id=${preferenceId}`,
+          sandbox_init_point: `https://sandbox.mercadopago.com.br/checkout/v1/redirect?preference_id=${preferenceId}`
+        }
+      };
+    }
     
-    console.log('=== PREFERENCE CREATED (TEST MODE) ===');
-    console.log('Preference ID:', preferenceId);
-    console.log('Test URL:', testUrl);
+    console.log('=== PREFERENCE CREATED ===');
+    console.log('Preference ID:', response.body.id);
+    console.log('Init Point:', response.body.init_point);
 
     res.json({
       success: true,
       data: {
-        id: preferenceId,
-        init_point: testUrl,
-        sandbox_init_point: testUrl
+        id: response.body.id,
+        init_point: response.body.init_point,
+        sandbox_init_point: response.body.sandbox_init_point
       }
     });
 
