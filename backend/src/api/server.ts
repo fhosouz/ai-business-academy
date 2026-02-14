@@ -3,6 +3,7 @@ import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import { paymentsRoutes } from './routes/payments.routes';
 
 // Carregar variáveis de ambiente do backend
 dotenv.config();
@@ -29,6 +30,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Usar routes de pagamentos
+app.use('/api/payments', paymentsRoutes);
 
 type DbFilterOp = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'in';
 
@@ -557,33 +561,6 @@ app.post('/api/users/:userId/progress/:lessonId', async (req, res) => {
     }
 
     res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Pagamentos (Mercado Pago)
-app.post('/api/payments/create-preference', async (req, res) => {
-  try {
-    const { items, userId } = req.body;
-    
-    // Integração com Mercado Pago no backend
-    const preference = {
-      items,
-      back_urls: {
-        success: `${process.env.FRONTEND_URL}/payment/success`,
-        failure: `${process.env.FRONTEND_URL}/payment/failure`,
-        pending: `${process.env.FRONTEND_URL}/payment/pending`,
-      },
-      auto_return: 'approved',
-    };
-
-    // Aqui você faria a integração real com Mercado Pago
-    // Por enquanto, retornamos uma simulação
-    res.json({
-      id: 'preference_' + Date.now(),
-      init_point: 'https://www.mercadopago.com.br/checkout/v1/redirect',
-    });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
