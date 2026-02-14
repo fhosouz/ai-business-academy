@@ -33,6 +33,23 @@ const Header = ({ onResultSelect }: HeaderProps) => {
         console.log('Header found in DOM:', header);
         console.log('Header styles:', window.getComputedStyle(header));
         console.log('Header visible:', window.getComputedStyle(header).display !== 'none');
+        
+        // Verificar posição e dimensões
+        const rect = header.getBoundingClientRect();
+        console.log('Header bounding box:', {
+          top: rect.top,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height,
+          bottom: rect.bottom,
+          right: rect.right
+        });
+        console.log('Header in viewport:', (
+          rect.top >= 0 && 
+          rect.left >= 0 && 
+          rect.bottom <= window.innerHeight && 
+          rect.right <= window.innerWidth
+        ));
       } else {
         console.log('Header NOT found in DOM!');
       }
@@ -59,7 +76,17 @@ const Header = ({ onResultSelect }: HeaderProps) => {
   return (
     <header 
       className="bg-white border-b border-gray-200 sticky top-0 z-50"
-      style={{ backgroundColor: 'white', borderBottom: '1px solid rgb(229 231 235)' }}
+      style={{ 
+        backgroundColor: 'white', 
+        borderBottom: '1px solid rgb(229, 231, 235)',
+        position: 'sticky',
+        top: '0',
+        zIndex: '9999',
+        display: 'block',
+        width: '100%',
+        height: 'auto',
+        minHeight: '60px'
+      }}
     >
       <div className="container mx-auto px-2 md:px-4 py-3 md:py-4">
         <div className="flex items-center justify-between">
