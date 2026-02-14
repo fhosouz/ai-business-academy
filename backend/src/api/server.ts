@@ -453,6 +453,115 @@ app.get('/api/courses', async (req, res) => {
   }
 });
 
+// Usuários - Perfil
+app.get('/api/users/:userId/profile', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data || null);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/users/:userId/profile', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const profileData = req.body;
+    
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .upsert({
+        user_id: userId,
+        ...profileData,
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Usuários - Progresso
+app.get('/api/users/:userId/progress', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Buscar progresso do usuário em todas as lições
+    const { data, error } = await supabase
+      .from('user_lesson_progress')
+      .select(`
+        *,
+        lessons(id, title, course_id, courses(title, category_id))
+      `)
+      .eq('user_id', userId);
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    // Calcular estatísticas
+    const totalLessons = data?.length || 0;
+    const completedLessons = data?.filter(lesson => lesson.completed).length || 0;
+    const totalTime = data?.reduce((acc, lesson) => acc + (lesson.time_spent || 0), 0) || 0;
+
+    res.json({
+      progress: data || [],
+      stats: {
+        total_lessons: totalLessons,
+        completed_lessons: completedLessons,
+        completion_rate: totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0,
+        total_time_spent: totalTime
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/users/:userId/progress/:lessonId', async (req, res) => {
+  try {
+    const { userId, lessonId } = req.params;
+    const progressData = req.body;
+    
+    const { data, error } = await supabase
+      .from('user_lesson_progress')
+      .upsert({
+        user_id: userId,
+        lesson_id: lessonId,
+        ...progressData,
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Pagamentos (Mercado Pago)
 app.post('/api/payments/create-preference', async (req, res) => {
   try {
