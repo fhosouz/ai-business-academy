@@ -74,7 +74,12 @@ router.post('/create-preference', async (req, res) => {
       // PRODUÇÃO - Usar API real do Mercado Pago
       console.log('=== CREATING REAL MERCADO PAGO PREFERENCE ===');
       const preference = new Preference(client);
-      response = await preference.create({ body: preferenceData });
+      const mpResponse = await preference.create({ body: preferenceData });
+      console.log('Mercado Pago Response:', JSON.stringify(mpResponse, null, 2));
+      
+      response = {
+        body: mpResponse
+      };
     } else {
       // DESENVOLVIMENTO/FALHA TOKEN - Simular
       console.log('=== CREATING SIMULATED PREFERENCE ===');
