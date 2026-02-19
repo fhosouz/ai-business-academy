@@ -60,7 +60,17 @@ router.post('/create-preference', async (req, res) => {
 
     let response;
     
-    if (process.env.MERCADO_PAGO_ACCESS_TOKEN && process.env.NODE_ENV === 'production') {
+    console.log('=== ENVIRONMENT CHECK ===');
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('MERCADO_PAGO_ACCESS_TOKEN exists:', !!process.env.MERCADO_PAGO_ACCESS_TOKEN);
+    console.log('MERCADO_PAGO_ACCESS_TOKEN length:', process.env.MERCADO_PAGO_ACCESS_TOKEN?.length || 0);
+    console.log('All env vars starting with MERCADO:', Object.keys(process.env).filter(k => k.startsWith('MERCADO')));
+    
+    // Forçar produção para teste
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+    const hasToken = process.env.MERCADO_PAGO_ACCESS_TOKEN && process.env.MERCADO_PAGO_ACCESS_TOKEN.length > 50;
+    
+    if (hasToken && isProduction) {
       // PRODUÇÃO - Usar API real do Mercado Pago
       console.log('=== CREATING REAL MERCADO PAGO PREFERENCE ===');
       const preference = new Preference(client);
@@ -68,11 +78,12 @@ router.post('/create-preference', async (req, res) => {
     } else {
       // DESENVOLVIMENTO/FALHA TOKEN - Simular
       console.log('=== CREATING SIMULATED PREFERENCE ===');
+      console.log('Reason:', hasToken ? 'Not production' : 'No valid token');
       const preferenceId = `preference_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       response = {
         body: {
           id: preferenceId,
-          init_point: `https://sandbox.mercadopago.com.br/checkout/v1/redirect?preference_id=${preferenceId}`,
+          init_point: `https://www.mercadopago.com.br/checkout/v1/redirect?preference_id=${preferenceId}`,
           sandbox_init_point: `https://sandbox.mercadopago.com.br/checkout/v1/redirect?preference_id=${preferenceId}`
         }
       };
