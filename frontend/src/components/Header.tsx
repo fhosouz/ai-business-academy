@@ -50,6 +50,15 @@ const Header = ({ onResultSelect }: HeaderProps) => {
           rect.bottom <= window.innerHeight && 
           rect.right <= window.innerWidth
         ));
+        console.log('Window dimensions:', {
+          width: window.innerWidth,
+          height: window.innerHeight
+        });
+        console.log('Header HTML content:', header.innerHTML.substring(0, 200) + '...');
+        
+        // Adicionar borda vermelha temporária para visualização
+        header.style.border = '3px solid red';
+        console.log('Red border added to header for visualization');
       } else {
         console.log('Header NOT found in DOM!');
       }
