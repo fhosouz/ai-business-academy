@@ -5,7 +5,7 @@ const router = Router();
 
 // Configurar Mercado Pago
 const client = new MercadoPagoConfig({ 
-  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || 'TEST-ACCESS-TOKEN' 
+  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || 'TEST-ACCESS-TOKEN' 
 });
 
 // Criar preferência de pagamento (PRODUÇÃO)
@@ -19,13 +19,13 @@ router.post('/create-preference', async (req, res) => {
     console.log('Payer:', payerInfo);
     console.log('Environment:', process.env.NODE_ENV);
     console.log('All ENV vars:', {
-      MERCADO_PAGO_ACCESS_TOKEN: process.env.MERCADO_PAGO_ACCESS_TOKEN ? 'CONFIGURED' : 'NOT CONFIGURED',
+      MERCADOPAGO_ACCESS_TOKEN: process.env.MERCADOPAGO_ACCESS_TOKEN ? 'CONFIGURED' : 'NOT CONFIGURED',
       NODE_ENV: process.env.NODE_ENV,
       BACKEND_URL: process.env.BACKEND_URL,
       FRONTEND_URL: process.env.FRONTEND_URL
     });
-    console.log('MP Token Configured:', !!process.env.MERCADO_PAGO_ACCESS_TOKEN);
-    console.log('MP Token Length:', process.env.MERCADO_PAGO_ACCESS_TOKEN?.length || 0);
+    console.log('MP Token Configured:', !!process.env.MERCADOPAGO_ACCESS_TOKEN);
+    console.log('MP Token Length:', process.env.MERCADOPAGO_ACCESS_TOKEN?.length || 0);
 
     const prices = {
       premium: 99.90,
@@ -62,13 +62,13 @@ router.post('/create-preference', async (req, res) => {
     
     console.log('=== ENVIRONMENT CHECK ===');
     console.log('NODE_ENV:', process.env.NODE_ENV);
-    console.log('MERCADO_PAGO_ACCESS_TOKEN exists:', !!process.env.MERCADO_PAGO_ACCESS_TOKEN);
-    console.log('MERCADO_PAGO_ACCESS_TOKEN length:', process.env.MERCADO_PAGO_ACCESS_TOKEN?.length || 0);
+    console.log('MERCADOPAGO_ACCESS_TOKEN exists:', !!process.env.MERCADOPAGO_ACCESS_TOKEN);
+    console.log('MERCADOPAGO_ACCESS_TOKEN length:', process.env.MERCADOPAGO_ACCESS_TOKEN?.length || 0);
     console.log('All env vars starting with MERCADO:', Object.keys(process.env).filter(k => k.startsWith('MERCADO')));
     
     // Forçar produção para teste
     const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
-    const hasToken = process.env.MERCADO_PAGO_ACCESS_TOKEN && process.env.MERCADO_PAGO_ACCESS_TOKEN.length > 50;
+    const hasToken = process.env.MERCADOPAGO_ACCESS_TOKEN && process.env.MERCADOPAGO_ACCESS_TOKEN.length > 50;
     
     if (hasToken && isProduction) {
       // PRODUÇÃO - Usar API real do Mercado Pago
