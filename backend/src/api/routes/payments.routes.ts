@@ -28,8 +28,8 @@ router.post('/create-preference', async (req, res) => {
     console.log('MP Token Length:', process.env.MERCADOPAGO_ACCESS_TOKEN?.length || 0);
 
     const prices = {
-      premium: 99.90,
-      enterprise: 299.90
+      premium: 1.00,
+      enterprise: 1.00
     };
 
     // Criar preferência REAL do Mercado Pago
@@ -55,8 +55,18 @@ router.post('/create-preference', async (req, res) => {
       },
       auto_return: 'approved',
       external_reference: `${planType}_${Date.now()}`,
-      notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`
+      notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
+      payment_methods: {
+        excluded_payment_types: [],
+        excluded_payment_methods: [],
+        installments: 1
+      }
     };
+
+    console.log('=== PREFERENCE DATA ===');
+    console.log('Full preference data:', JSON.stringify(preferenceData, null, 2));
+    console.log('Item price:', preferenceData.items[0].unit_price);
+    console.log('Total amount:', preferenceData.items[0].unit_price * preferenceData.items[0].quantity);
 
     let response;
     
