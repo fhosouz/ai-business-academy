@@ -73,13 +73,18 @@ router.post('/create-preference', async (req, res) => {
     if (hasToken && isProduction) {
       // PRODUÇÃO - Usar API real do Mercado Pago
       console.log('=== CREATING REAL MERCADO PAGO PREFERENCE ===');
-      const preference = new Preference(client);
-      const mpResponse = await preference.create({ body: preferenceData });
-      console.log('Mercado Pago Response:', JSON.stringify(mpResponse, null, 2));
-      
-      response = {
-        body: mpResponse
-      };
+      try {
+        const preference = new Preference(client);
+        const mpResponse = await preference.create({ body: preferenceData });
+        console.log('Mercado Pago Response:', JSON.stringify(mpResponse, null, 2));
+        
+        response = {
+          body: mpResponse
+        };
+      } catch (mpError) {
+        console.error('Mercado Pago API Error:', mpError);
+        throw new Error(`Mercado Pago API Error: ${mpError.message}`);
+      }
     } else {
       // DESENVOLVIMENTO/FALHA TOKEN - Simular
       console.log('=== CREATING SIMULATED PREFERENCE ===');
@@ -95,6 +100,16 @@ router.post('/create-preference', async (req, res) => {
     }
     
     console.log('=== PREFERENCE CREATED ===');
+    console.log('Response object:', JSON.stringify(response, null, 2));
+    console.log('Response.body:', JSON.stringify(response?.body, null, 2));
+    console.log('Response type:', typeof response);
+    console.log('Response.body type:', typeof response?.body);
+    
+    if (!response || !response.body) {
+      console.error('ERROR: Response or response.body is undefined!');
+      throw new Error('Invalid response from Mercado Pago API');
+    }
+    
     console.log('Preference ID:', response.body.id);
     console.log('Init Point:', response.body.init_point);
 
