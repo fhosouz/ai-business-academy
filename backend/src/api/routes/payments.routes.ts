@@ -27,10 +27,23 @@ router.post('/create-preference', async (req, res) => {
     console.log('MP Token Configured:', !!process.env.MERCADOPAGO_ACCESS_TOKEN);
     console.log('MP Token Length:', process.env.MERCADOPAGO_ACCESS_TOKEN?.length || 0);
 
+    console.log('=== ENVIRONMENT DEBUG ===');
+    console.log('BACKEND_URL:', process.env.BACKEND_URL);
+    console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    
     const prices = {
       premium: 1.00,
       enterprise: 1.00
     };
+
+    // URLs configuradas corretamente
+    const backendUrl = process.env.BACKEND_URL || 'https://ai-business-academy-backend.onrender.com';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://automatizeai-academy.netlify.app';
+    
+    console.log('=== CONFIGURED URLS ===');
+    console.log('Backend URL:', backendUrl);
+    console.log('Frontend URL:', frontendUrl);
 
     // Criar preferência REAL do Mercado Pago
     const preferenceData = {
@@ -62,13 +75,13 @@ router.post('/create-preference', async (req, res) => {
         }
       },
       back_urls: {
-        success: returnUrl || `${process.env.FRONTEND_URL}/payment/success`,
-        failure: failureUrl || `${process.env.FRONTEND_URL}/payment/failure`,
-        pending: `${process.env.FRONTEND_URL}/payment/pending`
+        success: returnUrl || `${frontendUrl}/payment/success`,
+        failure: failureUrl || `${frontendUrl}/payment/failure`,
+        pending: `${frontendUrl}/payment/pending`
       },
       auto_return: 'approved',
       external_reference: `${planType}_${Date.now()}`,
-      notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
+      notification_url: `${backendUrl}/api/payments/webhook`,
       payment_methods: {
         excluded_payment_types: [
           { id: 'ticket' },
@@ -79,9 +92,6 @@ router.post('/create-preference', async (req, res) => {
         installments: 1,
         default_payment_method_id: 'master',
         default_installments: 1
-      },
-      differential_pricing: {
-        id: 1
       }
     };
 
