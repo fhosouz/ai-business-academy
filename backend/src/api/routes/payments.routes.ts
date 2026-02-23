@@ -41,12 +41,25 @@ router.post('/create-preference', async (req, res) => {
           description: `Acesso ao plano ${planType} ${courseName ? `para o curso ${courseName}` : ''}`,
           unit_price: prices[planType] || prices.premium,
           quantity: 1,
-          currency_id: 'BRL'
+          currency_id: 'BRL',
+          picture_url: 'https://automatizeai-academy.netlify.app/logo.svg'
         }
       ],
       payer: {
         name: payerInfo?.name || 'Usuario',
-        email: payerInfo?.email || 'user@example.com'
+        email: payerInfo?.email || 'user@example.com',
+        identification: {
+          type: 'CPF',
+          number: '12345678909'
+        },
+        address: {
+          zip_code: '12345678',
+          street_name: 'Rua Teste',
+          street_number: '123',
+          neighborhood: 'Centro',
+          city: 'São Paulo',
+          federal_unit: 'SP'
+        }
       },
       back_urls: {
         success: returnUrl || `${process.env.FRONTEND_URL}/payment/success`,
@@ -57,9 +70,18 @@ router.post('/create-preference', async (req, res) => {
       external_reference: `${planType}_${Date.now()}`,
       notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
       payment_methods: {
-        excluded_payment_types: [],
+        excluded_payment_types: [
+          { id: 'ticket' },
+          { id: 'bank_transfer' },
+          { id: 'atm' }
+        ],
         excluded_payment_methods: [],
-        installments: 1
+        installments: 1,
+        default_payment_method_id: 'master',
+        default_installments: 1
+      },
+      differential_pricing: {
+        id: 1
       }
     };
 
