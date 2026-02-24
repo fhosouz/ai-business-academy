@@ -59,19 +59,23 @@ router.post('/create-preference', async (req, res) => {
         }
       ],
       payer: {
-        name: payerInfo?.name || 'Usuario',
-        email: payerInfo?.email || 'user@example.com',
+        name: payerInfo?.name || 'João Silva',
+        email: payerInfo?.email || 'joao.silva@example.com',
         identification: {
           type: 'CPF',
-          number: '12345678909'
+          number: '12345678909'  // CPF de teste
         },
         address: {
-          zip_code: '12345678',
-          street_name: 'Rua Teste',
-          street_number: '123',
-          neighborhood: 'Centro',
+          zip_code: '01310-100',
+          street_name: 'Avenida Paulista',
+          street_number: '1000',
+          neighborhood: 'Bela Vista',
           city: 'São Paulo',
           federal_unit: 'SP'
+        },
+        phone: {
+          area_code: '11',
+          number: '987654321'
         }
       },
       back_urls: {
@@ -89,8 +93,8 @@ router.post('/create-preference', async (req, res) => {
           { id: 'atm' }
         ],
         excluded_payment_methods: [],
-        installments: 1,
-        default_payment_method_id: 'master',
+        installments: 12,  // Permitir parcelamento
+        default_payment_method_id: null,  // Remover padrão
         default_installments: 1
       }
     };
@@ -111,8 +115,14 @@ router.post('/create-preference', async (req, res) => {
     // Forçar produção para teste
     const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
     const hasToken = process.env.MERCADOPAGO_ACCESS_TOKEN && process.env.MERCADOPAGO_ACCESS_TOKEN.length > 50;
+    const forceSandbox = process.env.FORCE_SANDBOX === 'true'; // Nova variável para forçar sandbox
     
-    if (hasToken && isProduction) {
+    console.log('=== PAYMENT MODE ===');
+    console.log('Is Production:', isProduction);
+    console.log('Has Token:', hasToken);
+    console.log('Force Sandbox:', forceSandbox);
+    
+    if (hasToken && isProduction && !forceSandbox) {
       // PRODUÇÃO - Usar API real do Mercado Pago
       console.log('=== CREATING REAL MERCADO PAGO PREFERENCE ===');
       try {
@@ -128,14 +138,15 @@ router.post('/create-preference', async (req, res) => {
         throw new Error(`Mercado Pago API Error: ${mpError.message}`);
       }
     } else {
-      // DESENVOLVIMENTO/FALHA TOKEN - Simular
+      // DESENVOLVIMENTO/FALHA TOKEN/FORÇADO SANDBOX - Simular
+      const reason = forceSandbox ? 'Forced sandbox mode' : (hasToken ? 'Not production' : 'No valid token');
       console.log('=== CREATING SIMULATED PREFERENCE ===');
-      console.log('Reason:', hasToken ? 'Not production' : 'No valid token');
+      console.log('Reason:', reason);
       const preferenceId = `preference_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       response = {
         body: {
           id: preferenceId,
-          init_point: `https://www.mercadopago.com.br/checkout/v1/redirect?preference_id=${preferenceId}`,
+          init_point: `https://sandbox.mercadopago.com.br/checkout/v1/redirect?preference_id=${preferenceId}`,
           sandbox_init_point: `https://sandbox.mercadopago.com.br/checkout/v1/redirect?preference_id=${preferenceId}`
         }
       };
