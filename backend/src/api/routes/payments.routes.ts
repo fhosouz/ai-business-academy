@@ -27,10 +27,24 @@ router.post('/create-preference', async (req, res) => {
     console.log('MP Token Configured:', !!process.env.MERCADOPAGO_ACCESS_TOKEN);
     console.log('MP Token Length:', process.env.MERCADOPAGO_ACCESS_TOKEN?.length || 0);
 
-    console.log('=== ENVIRONMENT DEBUG ===');
-    console.log('BACKEND_URL:', process.env.BACKEND_URL);
-    console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
-    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('=== MERCADO PAGO ACCOUNT DEBUG ===');
+    console.log('Access Token first 20 chars:', process.env.MERCADOPAGO_ACCESS_TOKEN?.substring(0, 20) + '...');
+    
+    // Extrair informações do token
+    if (process.env.MERCADOPAGO_ACCESS_TOKEN) {
+      try {
+        const tokenParts = process.env.MERCADOPAGO_ACCESS_TOKEN.split('-');
+        if (tokenParts.length >= 2) {
+          const appId = tokenParts[0];
+          const userId = tokenParts[1];
+          console.log('App ID:', appId);
+          console.log('User ID (Collector):', userId);
+          console.log('Account URL:', `https://www.mercadopago.com.br/users/${userId}`);
+        }
+      } catch (e) {
+        console.log('Error parsing token:', e.message);
+      }
+    }
     
     const prices = {
       premium: 1.00,
@@ -59,11 +73,11 @@ router.post('/create-preference', async (req, res) => {
         }
       ],
       payer: {
-        name: payerInfo?.name || 'João Silva',
-        email: payerInfo?.email || 'joao.silva@example.com',
+        name: payerInfo?.name || 'Fabricio Souza',
+        email: payerInfo?.email || 'fabricio.henrique.souza99@gmail.com',
         identification: {
           type: 'CPF',
-          number: '12345678909'  // CPF de teste
+          number: '12345678901'  // CPF válido (formato correto)
         },
         address: {
           zip_code: '01310-100',
