@@ -73,23 +73,24 @@ router.post('/create-preference', async (req, res) => {
         }
       ],
       payer: {
-        name: payerInfo?.name || 'Fabricio Souza',
-        email: payerInfo?.email || 'fabricio.henrique.souza99@gmail.com',
+        // Removidos dados padrão - usuário deve preencher manualmente
+        name: null,
+        email: null,
         identification: {
           type: 'CPF',
-          number: '12345678901'  // CPF válido (formato correto)
+          number: null
         },
         address: {
-          zip_code: '01310-100',
-          street_name: 'Avenida Paulista',
-          street_number: '1000',
-          neighborhood: 'Bela Vista',
-          city: 'São Paulo',
-          federal_unit: 'SP'
+          zip_code: null,
+          street_name: null,
+          street_number: null,
+          neighborhood: null,
+          city: null,
+          federal_unit: null
         },
         phone: {
-          area_code: '11',
-          number: '987654321'
+          area_code: null,
+          number: null
         }
       },
       back_urls: {
@@ -101,15 +102,10 @@ router.post('/create-preference', async (req, res) => {
       external_reference: `${planType}_${Date.now()}`,
       notification_url: `${backendUrl}/api/payments/webhook`,
       payment_methods: {
-        excluded_payment_types: [
-          { id: 'ticket' },
-          { id: 'bank_transfer' },
-          { id: 'atm' }
-        ],
+        // Removido exclusões e padrões para máxima flexibilidade
+        excluded_payment_types: [],
         excluded_payment_methods: [],
-        installments: 12,  // Permitir parcelamento
-        default_payment_method_id: null,  // Remover padrão
-        default_installments: 1
+        installments: 12
       }
     };
 
