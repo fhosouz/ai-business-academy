@@ -1,7 +1,14 @@
 import { Router } from 'express';
-import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
+import { createClient } from '@supabase/supabase-js';
 
 const router = Router();
+
+// Configurar Supabase
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 // Configurar Mercado Pago
 const client = new MercadoPagoConfig({ 
@@ -229,14 +236,221 @@ router.get('/status/:id', async (req, res) => {
   }
 });
 
+// Endpoint para testar webhook manualmente
+router.post('/test-webhook', async (req, res) => {
+  try {
+    console.log('=== MANUAL WEBHOOK TEST ===');
+    
+    // Simular dados do pagamento aprovado
+    const testPaymentData = {
+      topic: 'payment',
+      action: 'payment.created',
+      data: {
+        id: '147773647340' // Usar o ID real do pagamento
+      }
+    };
+    
+    // Processar como se fosse o webhook real
+    req.body = testPaymentData;
+    
+    // Chamar a lógica do webhook
+    const { topic, action, data } = testPaymentData;
+    
+    if (topic === 'payment' || action === 'payment.created') {
+      const paymentId = data?.id;
+      console.log('Processing payment:', paymentId);
+      
+      if (paymentId) {
+        try {
+          const client = new MercadoPagoConfig({ 
+            accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN 
+          });
+          const payment = new Payment(client);
+          const paymentData = await payment.get({ id: paymentId });
+          
+          console.log('Payment data:', JSON.stringify(paymentData, null, 2));
+          
+          if (paymentData.status === 'approved') {
+            console.log('✅ Payment approved - Processing user upgrade');
+            
+            const payerEmail = paymentData.payer?.email;
+            const externalReference = paymentData.external_reference;
+            const amount = paymentData.transaction_amount;
+            
+            console.log('Payer email:', payerEmail);
+            console.log('External reference:', externalReference);
+            console.log('Amount:', amount);
+            
+            if (payerEmail) {
+              const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
+              
+              if (!userError && userData.users) {
+                const user = userData.users.find(u => u.email === payerEmail);
+                
+                if (user) {
+                  console.log('✅ User found:', user.id);
+                  
+                  const { error: paymentError } = await supabase
+                    .from('payments')
+                    .insert({
+                      user_id: user.id,
+                      payment_id: paymentId,
+                      amount: amount,
+                      status: 'approved',
+                      payment_method: paymentData.payment_method_id,
+                      external_reference: externalReference,
+                      payment_data: paymentData,
+                      created_at: new Date().toISOString()
+                    });
+                  
+                  if (paymentError) {
+                    console.error('❌ Error saving payment:', paymentError);
+                  } else {
+                    console.log('✅ Payment saved successfully');
+                    
+                    const { error: updateError } = await supabase
+                      .from('user_profiles')
+                      .upsert({
+                        user_id: user.id,
+                        plan: 'premium',
+                        updated_at: new Date().toISOString()
+                      }, {
+                        onConflict: 'user_id'
+                      });
+                    
+                    if (updateError) {
+                      console.error('❌ Error updating user plan:', updateError);
+                    } else {
+                      console.log('✅ User plan updated to premium');
+                    }
+                  }
+                } else {
+                  console.log('❌ User not found for email:', payerEmail);
+                }
+              } else {
+                console.error('❌ Error fetching users:', userError);
+              }
+            }
+          } else {
+            console.log('Payment not approved, status:', paymentData.status);
+          }
+        } catch (mpError) {
+          console.error('❌ Error fetching payment from Mercado Pago:', mpError);
+        }
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'Webhook test completed',
+      checkLogs: 'See backend logs for details'
+    });
+  } catch (error) {
+    console.error('Error in test webhook:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Webhook para notificações do Mercado Pago
-router.post('/webhook', (req, res) => {
+router.post('/webhook', async (req, res) => {
   try {
     console.log('=== MERCADO PAGO WEBHOOK ===');
     console.log('Body:', req.body);
     
-    // Simular processamento do webhook
-    // Em produção, aqui você processaria o pagamento e atualizaria o plano do usuário
+    const { topic, resource, action, data } = req.body;
+    
+    // Processar diferentes tipos de notificações
+    if (topic === 'payment' || action === 'payment.created') {
+      const paymentId = data?.id || resource;
+      console.log('Processing payment:', paymentId);
+      
+      if (paymentId) {
+        // Buscar informações detalhadas do pagamento
+        try {
+          const client = new MercadoPagoConfig({ 
+            accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN 
+          });
+          const payment = new Payment(client);
+          const paymentData = await payment.get({ id: paymentId });
+          
+          console.log('Payment data:', JSON.stringify(paymentData, null, 2));
+          
+          if (paymentData.status === 'approved') {
+            console.log('✅ Payment approved - Processing user upgrade');
+            
+            // Extrair informações do pagamento
+            const payerEmail = paymentData.payer?.email;
+            const externalReference = paymentData.external_reference;
+            const amount = paymentData.transaction_amount;
+            
+            console.log('Payer email:', payerEmail);
+            console.log('External reference:', externalReference);
+            console.log('Amount:', amount);
+            
+            if (payerEmail) {
+              // Buscar usuário pelo email
+              const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
+              
+              if (!userError && userData.users) {
+                const user = userData.users.find(u => u.email === payerEmail);
+                
+                if (user) {
+                  console.log('✅ User found:', user.id);
+                  
+                  // Salvar registro do pagamento
+                  const { error: paymentError } = await supabase
+                    .from('payments')
+                    .insert({
+                      user_id: user.id,
+                      payment_id: paymentId,
+                      amount: amount,
+                      status: 'approved',
+                      payment_method: paymentData.payment_method_id,
+                      external_reference: externalReference,
+                      payment_data: paymentData,
+                      created_at: new Date().toISOString()
+                    });
+                  
+                  if (paymentError) {
+                    console.error('❌ Error saving payment:', paymentError);
+                  } else {
+                    console.log('✅ Payment saved successfully');
+                    
+                    // Atualizar plano do usuário
+                    const { error: updateError } = await supabase
+                      .from('user_profiles')
+                      .upsert({
+                        user_id: user.id,
+                        plan: 'premium',
+                        updated_at: new Date().toISOString()
+                      }, {
+                        onConflict: 'user_id'
+                      });
+                    
+                    if (updateError) {
+                      console.error('❌ Error updating user plan:', updateError);
+                    } else {
+                      console.log('✅ User plan updated to premium');
+                    }
+                  }
+                } else {
+                  console.log('❌ User not found for email:', payerEmail);
+                }
+              } else {
+                console.error('❌ Error fetching users:', userError);
+              }
+            }
+          } else {
+            console.log('Payment not approved, status:', paymentData.status);
+          }
+        } catch (mpError) {
+          console.error('❌ Error fetching payment from Mercado Pago:', mpError);
+        }
+      }
+    }
     
     res.status(200).send('OK');
   } catch (error) {
