@@ -236,6 +236,80 @@ router.get('/status/:id', async (req, res) => {
   }
 });
 
+// Endpoint para validar status do pagamento e plano do usuário
+router.get('/validate-payment/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    console.log('=== VALIDATING PAYMENT FOR USER ===');
+    console.log('User ID:', userId);
+    
+    // 1. Buscar perfil do usuário
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (profileError) {
+      console.error('❌ Error fetching user profile:', profileError);
+      return res.status(400).json({
+        success: false,
+        error: 'Erro ao buscar perfil do usuário'
+      });
+    }
+    
+    // 2. Buscar pagamentos do usuário
+    const { data: payments, error: paymentsError } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    
+    if (paymentsError) {
+      console.error('❌ Error fetching payments:', paymentsError);
+      return res.status(400).json({
+        success: false,
+        error: 'Erro ao buscar pagamentos'
+      });
+    }
+    
+    // 3. Verificar se tem pagamento aprovado recente
+    const approvedPayments = payments?.filter(p => p.status === 'approved') || [];
+    const recentApprovedPayment = approvedPayments.find(p => {
+      const paymentTime = new Date(p.created_at);
+      const now = new Date();
+      const hoursDiff = (now.getTime() - paymentTime.getTime()) / (1000 * 60 * 60);
+      return hoursDiff <= 24; // Últimas 24 horas
+    });
+    
+    const response = {
+      success: true,
+      data: {
+        user_id: userId,
+        current_plan: profile?.plan || 'free',
+        plan_updated_at: profile?.plan_updated_at,
+        total_payments: payments?.length || 0,
+        approved_payments: approvedPayments.length,
+        recent_approved_payment: recentApprovedPayment || null,
+        has_recent_payment: !!recentApprovedPayment,
+        payment_required: profile?.plan !== 'premium' && !recentApprovedPayment
+      }
+    };
+    
+    console.log('✅ Validation response:', response);
+    res.json(response);
+    
+  } catch (error) {
+    console.error('❌ Error validating payment:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno ao validar pagamento'
+    });
+  }
+});
+
 // Endpoint para testar webhook manualmente
 router.post('/test-webhook', async (req, res) => {
   try {
@@ -285,7 +359,7 @@ router.post('/test-webhook', async (req, res) => {
               const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
               
               if (!userError && userData.users) {
-                const user = userData.users.find(u => u.email === payerEmail);
+                const user = userData.users.find((u: any) => u.email === payerEmail);
                 
                 if (user) {
                   console.log('✅ User found:', user.id);
@@ -385,55 +459,95 @@ router.post('/webhook', async (req, res) => {
             const payerEmail = paymentData.payer?.email;
             const externalReference = paymentData.external_reference;
             const amount = paymentData.transaction_amount;
+            const paymentMethod = paymentData.payment_method_id;
             
             console.log('Payer email:', payerEmail);
             console.log('External reference:', externalReference);
             console.log('Amount:', amount);
+            console.log('Payment method:', paymentMethod);
             
             if (payerEmail) {
               // Buscar usuário pelo email
               const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
               
               if (!userError && userData.users) {
-                const user = userData.users.find(u => u.email === payerEmail);
+                const user = userData.users.find((u: any) => u.email === payerEmail);
                 
                 if (user) {
                   console.log('✅ User found:', user.id);
                   
-                  // Salvar registro do pagamento
-                  const { error: paymentError } = await supabase
+                  // 1. Verificar se pagamento já foi processado
+                  const { data: existingPayment } = await supabase
+                    .from('payments')
+                    .select('*')
+                    .eq('payment_id', paymentId)
+                    .single();
+                  
+                  if (existingPayment) {
+                    console.log('⚠️ Payment already processed, skipping...');
+                    return res.status(200).send('OK');
+                  }
+                  
+                  // 2. Salvar registro do pagamento
+                  const { error: paymentError, data: savedPayment } = await supabase
                     .from('payments')
                     .insert({
                       user_id: user.id,
                       payment_id: paymentId,
                       amount: amount,
                       status: 'approved',
-                      payment_method: paymentData.payment_method_id,
+                      payment_method: paymentMethod,
                       external_reference: externalReference,
                       payment_data: paymentData,
-                      created_at: new Date().toISOString()
-                    });
+                      created_at: new Date().toISOString(),
+                      processed_at: new Date().toISOString()
+                    })
+                    .select()
+                    .single();
                   
                   if (paymentError) {
                     console.error('❌ Error saving payment:', paymentError);
+                    return res.status(500).send('ERROR');
                   } else {
-                    console.log('✅ Payment saved successfully');
+                    console.log('✅ Payment saved successfully:', savedPayment);
                     
-                    // Atualizar plano do usuário
-                    const { error: updateError } = await supabase
+                    // 3. Atualizar plano do usuário
+                    const { error: updateError, data: updatedProfile } = await supabase
                       .from('user_profiles')
-                      .upsert({
+                      .upsert([{
                         user_id: user.id,
                         plan: 'premium',
+                        plan_updated_at: new Date().toISOString(),
                         updated_at: new Date().toISOString()
-                      }, {
+                      }], {
                         onConflict: 'user_id'
-                      });
+                      })
+                      .select()
+                      .single();
                     
                     if (updateError) {
                       console.error('❌ Error updating user plan:', updateError);
+                      return res.status(500).send('ERROR');
                     } else {
-                      console.log('✅ User plan updated to premium');
+                      console.log('✅ User plan updated to premium:', updatedProfile);
+                      
+                      // 4. Registrar log de upgrade
+                      await supabase
+                        .from('user_plan_logs')
+                        .insert({
+                          user_id: user.id,
+                          from_plan: 'free',
+                          to_plan: 'premium',
+                          payment_id: paymentId,
+                          amount: amount,
+                          created_at: new Date().toISOString()
+                        });
+                      
+                      console.log('✅ Plan upgrade logged successfully');
+                      
+                      // 5. Enviar confirmação (opcional)
+                      console.log('✅ Payment processing completed successfully');
+                      console.log('✅ User should be redirected to /payment/success');
                     }
                   }
                 } else {
@@ -442,19 +556,30 @@ router.post('/webhook', async (req, res) => {
               } else {
                 console.error('❌ Error fetching users:', userError);
               }
+            } else {
+              console.log('❌ No payer email found');
             }
           } else {
-            console.log('Payment not approved, status:', paymentData.status);
+            console.log('❌ Payment not approved, status:', paymentData.status);
+            // Para pagamentos pendentes/rejeitados, apenas log
+            console.log('Payment status details:', {
+              status: paymentData.status,
+              status_detail: paymentData.status_detail,
+              money_release_date: paymentData.money_release_date
+            });
           }
         } catch (mpError) {
           console.error('❌ Error fetching payment from Mercado Pago:', mpError);
+          return res.status(500).send('ERROR');
         }
       }
+    } else {
+      console.log('ℹ️ Webhook received but not a payment notification:', { topic, action });
     }
     
     res.status(200).send('OK');
   } catch (error) {
-    console.error('Error processing webhook:', error);
+    console.error('❌ Error processing webhook:', error);
     res.status(500).send('ERROR');
   }
 });
