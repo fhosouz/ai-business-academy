@@ -109,10 +109,30 @@ router.post('/create-preference', async (req, res) => {
       external_reference: `${planType}_${Date.now()}`,
       notification_url: `${backendUrl}/api/payments/webhook`,
       payment_methods: {
-        // Removido exclusões e padrões para máxima flexibilidade
+        // Configurações explícitas para validação de campos
         excluded_payment_types: [],
         excluded_payment_methods: [],
-        installments: 12
+        installments: 12,
+        // Adicionar configurações de validação para campos do cartão
+        card: {
+          // Configurar validação para número do cartão
+          card_number: {
+            length: 16,
+            allowed_lengths: [13, 14, 15, 16]
+          },
+          // Configurar validação para código de segurança
+          security_code: {
+            length: 3,
+            allowed_lengths: [3, 4]
+          },
+          // Configurar validação para data de expiração
+          expiration_month: {
+            length: 2
+          },
+          expiration_year: {
+            length: 2
+          }
+        }
       }
     };
 
