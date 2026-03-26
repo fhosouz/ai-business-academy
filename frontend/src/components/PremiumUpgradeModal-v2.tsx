@@ -63,6 +63,12 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
         enterprise: 299.90
       };
 
+      // Obter usuário atual para enviar userId
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id || null;
+
+      console.log('User ID:', userId);
+
       // Chamar backend para criar preferência de pagamento
       const response = await fetch(`${env.VITE_API_URL}/payments/create-preference`, {
         method: 'POST',
@@ -76,6 +82,7 @@ const PremiumUpgradeModal = ({ isOpen, onClose, courseName, currentPlan = 'free'
             name: formData.name || 'Usuario',
             email: formData.email || 'user@example.com',
           },
+          userId, // Enviar userId para external_reference
           returnUrl: `${window.location.origin}/payment/success`,
           failureUrl: `${window.location.origin}/payment/failure`,
         }),

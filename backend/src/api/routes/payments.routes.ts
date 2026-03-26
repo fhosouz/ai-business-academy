@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 const router = Router();
 
@@ -15,15 +16,70 @@ const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || 'TEST-ACCESS-TOKEN' 
 });
 
+// Middleware de validação de webhook do Mercado Pago
+const validateMercadoPagoWebhook = (req: any, res: any, next: any) => {
+  try {
+    const signature = req.headers['x-signature'];
+    const requestId = req.headers['x-request-id'];
+    
+    console.log('=== WEBHOOK VALIDATION ===');
+    console.log('Signature:', signature);
+    console.log('Request ID:', requestId);
+    
+    // Para desenvolvimento, permitir sem assinatura
+    if (process.env.NODE_ENV === 'development' || !signature) {
+      console.log('⚠️ Development mode - skipping signature validation');
+      return next();
+    }
+    
+    // Validar assinatura do Mercado Pago
+    const receivedData = JSON.stringify(req.body);
+    const webhookSecret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
+    
+    if (!webhookSecret) {
+      console.log('⚠️ Webhook secret not configured - skipping validation');
+      return next();
+    }
+    
+    // Calcular assinatura esperada
+    const computedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(receivedData)
+      .digest('hex');
+    
+    console.log('Computed signature:', computedSignature);
+    console.log('Received signature:', signature);
+    
+    // Comparar assinaturas
+    if (signature !== computedSignature) {
+      console.error('❌ Invalid webhook signature');
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Invalid webhook signature'
+      });
+    }
+    
+    console.log('✅ Webhook signature validated');
+    next();
+  } catch (error) {
+    console.error('❌ Webhook validation error:', error);
+    return res.status(500).json({
+      error: 'Validation error',
+      message: 'Failed to validate webhook'
+    });
+  }
+};
+
 // Criar preferência de pagamento (PRODUÇÃO)
 router.post('/create-preference', async (req, res) => {
   try {
-    const { planType, courseName, payerInfo, returnUrl, failureUrl } = req.body;
+    const { planType, courseName, payerInfo, returnUrl, failureUrl, userId } = req.body;
     
     console.log('=== CREATING PAYMENT PREFERENCE ===');
     console.log('Plan:', planType);
     console.log('Course:', courseName);
     console.log('Payer:', payerInfo);
+    console.log('User ID:', userId);
     console.log('Environment:', process.env.NODE_ENV);
     console.log('All ENV vars:', {
       MERCADOPAGO_ACCESS_TOKEN: process.env.MERCADOPAGO_ACCESS_TOKEN ? 'CONFIGURED' : 'NOT CONFIGURED',
@@ -37,25 +93,10 @@ router.post('/create-preference', async (req, res) => {
     console.log('=== MERCADO PAGO ACCOUNT DEBUG ===');
     console.log('Access Token first 20 chars:', process.env.MERCADOPAGO_ACCESS_TOKEN?.substring(0, 20) + '...');
     
-    // Extrair informações do token
-    if (process.env.MERCADOPAGO_ACCESS_TOKEN) {
-      try {
-        const tokenParts = process.env.MERCADOPAGO_ACCESS_TOKEN.split('-');
-        if (tokenParts.length >= 2) {
-          const appId = tokenParts[0];
-          const userId = tokenParts[1];
-          console.log('App ID:', appId);
-          console.log('User ID (Collector):', userId);
-          console.log('Account URL:', `https://www.mercadopago.com.br/users/${userId}`);
-        }
-      } catch (e) {
-        console.log('Error parsing token:', e.message);
-      }
-    }
-    
+    // Preços dos planos
     const prices = {
-      premium: 1.00,
-      enterprise: 1.00
+      premium: 1.00, // R$ 1,00 para teste
+      enterprise: 299.90
     };
 
     // URLs configuradas corretamente
@@ -66,11 +107,17 @@ router.post('/create-preference', async (req, res) => {
     console.log('Backend URL:', backendUrl);
     console.log('Frontend URL:', frontendUrl);
 
+    // Criar external_reference mais robusto
+    const timestamp = Date.now();
+    const externalReference = userId 
+      ? `${userId}_${planType}_${timestamp}`
+      : `guest_${planType}_${timestamp}`;
+
     // Criar preferência REAL do Mercado Pago
     const preferenceData = {
       items: [
         {
-          id: `item_${planType}_${Date.now()}`,
+          id: `item_${planType}_${timestamp}`,
           title: `Plano ${planType.toUpperCase()} - AI Business Academy`,
           description: `Acesso ao plano ${planType} ${courseName ? `para o curso ${courseName}` : ''}`,
           unit_price: prices[planType] || prices.premium,
@@ -106,7 +153,7 @@ router.post('/create-preference', async (req, res) => {
         pending: `${frontendUrl}/payment/pending`
       },
       auto_return: 'approved',
-      external_reference: `${planType}_${Date.now()}`,
+      external_reference: externalReference,
       notification_url: `${backendUrl}/api/payments/webhook`,
       payment_methods: {
         // Configurações explícitas para validação de campos
@@ -133,6 +180,13 @@ router.post('/create-preference', async (req, res) => {
             length: 2
           }
         }
+      },
+      // Adicionar metadados para tracking
+      metadata: {
+        user_id: userId || 'guest',
+        plan_type: planType,
+        course_name: courseName || 'general',
+        created_at: new Date().toISOString()
       }
     };
 
@@ -449,10 +503,13 @@ router.post('/test-webhook', async (req, res) => {
 });
 
 // Webhook para notificações do Mercado Pago
-router.post('/webhook', async (req, res) => {
+router.post('/webhook', validateMercadoPagoWebhook, async (req, res) => {
+  const startTime = Date.now();
+  
   try {
     console.log('=== MERCADO PAGO WEBHOOK ===');
     console.log('Body:', req.body);
+    console.log('Headers:', req.headers);
     
     const { topic, resource, action, data } = req.body;
     
@@ -462,136 +519,77 @@ router.post('/webhook', async (req, res) => {
       console.log('Processing payment:', paymentId);
       
       if (paymentId) {
-        // Buscar informações detalhadas do pagamento
-        try {
-          const client = new MercadoPagoConfig({ 
-            accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN 
-          });
-          const payment = new Payment(client);
-          const paymentData = await payment.get({ id: paymentId });
-          
-          console.log('Payment data:', JSON.stringify(paymentData, null, 2));
-          
-          if (paymentData.status === 'approved') {
-            console.log('✅ Payment approved - Processing user upgrade');
-            
-            // Extrair informações do pagamento
-            const payerEmail = paymentData.payer?.email;
-            const externalReference = paymentData.external_reference;
-            const amount = paymentData.transaction_amount;
-            const paymentMethod = paymentData.payment_method_id;
-            
-            console.log('Payer email:', payerEmail);
-            console.log('External reference:', externalReference);
-            console.log('Amount:', amount);
-            console.log('Payment method:', paymentMethod);
-            
-            if (payerEmail) {
-              // Buscar usuário pelo email
-              const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
-              
-              if (!userError && userData.users) {
-                const user = userData.users.find((u: any) => u.email === payerEmail);
-                
-                if (user) {
-                  console.log('✅ User found:', user.id);
-                  
-                  // 1. Verificar se pagamento já foi processado
-                  const { data: existingPayment } = await supabase
-                    .from('payments')
-                    .select('*')
-                    .eq('payment_id', paymentId)
-                    .single();
-                  
-                  if (existingPayment) {
-                    console.log('⚠️ Payment already processed, skipping...');
-                    return res.status(200).send('OK');
-                  }
-                  
-                  // 2. Salvar registro do pagamento
-                  const { error: paymentError, data: savedPayment } = await supabase
-                    .from('payments')
-                    .insert({
-                      user_id: user.id,
-                      payment_id: paymentId,
-                      amount: amount,
-                      status: 'approved',
-                      payment_method: paymentMethod,
-                      external_reference: externalReference,
-                      payment_data: paymentData,
-                      created_at: new Date().toISOString(),
-                      processed_at: new Date().toISOString()
-                    })
-                    .select()
-                    .single();
-                  
-                  if (paymentError) {
-                    console.error('❌ Error saving payment:', paymentError);
-                    return res.status(500).send('ERROR');
-                  } else {
-                    console.log('✅ Payment saved successfully:', savedPayment);
-                    
-                    // 3. Atualizar plano do usuário
-                    const { error: updateError, data: updatedProfile } = await supabase
-                      .from('user_profiles')
-                      .upsert([{
-                        user_id: user.id,
-                        plan: 'premium',
-                        plan_updated_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                      }], {
-                        onConflict: 'user_id'
-                      })
-                      .select()
-                      .single();
-                    
-                    if (updateError) {
-                      console.error('❌ Error updating user plan:', updateError);
-                      return res.status(500).send('ERROR');
-                    } else {
-                      console.log('✅ User plan updated to premium:', updatedProfile);
-                      
-                      // 4. Registrar log de upgrade
-                      await supabase
-                        .from('user_plan_logs')
-                        .insert({
-                          user_id: user.id,
-                          from_plan: 'free',
-                          to_plan: 'premium',
-                          payment_id: paymentId,
-                          amount: amount,
-                          created_at: new Date().toISOString()
-                        });
-                      
-                      console.log('✅ Plan upgrade logged successfully');
-                      
-                      // 5. Enviar confirmação (opcional)
-                      console.log('✅ Payment processing completed successfully');
-                      console.log('✅ User should be redirected to /payment/success');
-                    }
-                  }
-                } else {
-                  console.log('❌ User not found for email:', payerEmail);
-                }
-              } else {
-                console.error('❌ Error fetching users:', userError);
-              }
-            } else {
-              console.log('❌ No payer email found');
-            }
-          } else {
-            console.log('❌ Payment not approved, status:', paymentData.status);
-            // Para pagamentos pendentes/rejeitados, apenas log
-            console.log('Payment status details:', {
-              status: paymentData.status,
-              status_detail: paymentData.status_detail,
-              money_release_date: paymentData.money_release_date
-            });
-          }
-        } catch (mpError) {
-          console.error('❌ Error fetching payment from Mercado Pago:', mpError);
+        // 1. VERIFICAÇÃO DE IDEMPOTÊNCIA - Evitar processamento duplicado
+        console.log('=== CHECKING PAYMENT DUPLICATION ===');
+        const { data: existingPayment, error: checkError } = await supabase
+          .from('payments')
+          .select('*')
+          .eq('payment_id', paymentId)
+          .single();
+        
+        if (checkError && checkError.code !== 'PGRST116') {
+          console.error('❌ Error checking payment duplication:', checkError);
           return res.status(500).send('ERROR');
         }
+        
+        if (existingPayment) {
+          console.log('⚠️ Payment already processed, skipping...');
+          console.log('Existing payment:', existingPayment);
+          return res.status(200).send('OK');
+        }
+        
+        // 2. Buscar informações detalhadas do pagamento com retry
+        console.log('=== FETCHING PAYMENT DETAILS ===');
+        let paymentData;
+        const maxRetries = 3;
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            const client = new MercadoPagoConfig({ 
+              accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN 
+            });
+            const payment = new Payment(client);
+            paymentData = await payment.get({ id: paymentId });
+            console.log(`✅ Payment data fetched on attempt ${attempt}`);
+            break;
+          } catch (mpError) {
+            console.error(`❌ Attempt ${attempt} failed:`, mpError);
+            
+            if (attempt === maxRetries) {
+              throw new Error(`Failed to fetch payment after ${maxRetries} attempts: ${mpError.message}`);
+            }
+            
+            // Exponential backoff
+            const delay = Math.pow(2, attempt) * 1000;
+            console.log(`Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+        
+        console.log('Payment data:', JSON.stringify(paymentData, null, 2));
+        
+        // 3. Processar diferentes status
+        console.log('=== PROCESSING PAYMENT STATUS ===');
+        switch (paymentData.status) {
+          case 'pending':
+            await handlePendingPayment(paymentData);
+            break;
+          case 'approved':
+            await handleApprovedPayment(paymentData);
+            break;
+          case 'rejected':
+            await handleRejectedPayment(paymentData);
+            break;
+          case 'cancelled':
+            await handleCancelledPayment(paymentData);
+            break;
+          default:
+            console.log('ℹ️ Unhandled payment status:', paymentData.status);
+        }
+        
+        // 4. Log de performance
+        const processingTime = Date.now() - startTime;
+        console.log(`✅ Webhook processed in ${processingTime}ms`);
       }
     } else {
       console.log('ℹ️ Webhook received but not a payment notification:', { topic, action });
@@ -603,5 +601,117 @@ router.post('/webhook', async (req, res) => {
     res.status(500).send('ERROR');
   }
 });
+
+// Função para processar pagamento aprovado
+async function handleApprovedPayment(paymentData: any) {
+  console.log('✅ Payment approved - Processing user upgrade');
+  
+  // Extrair informações do pagamento
+  const payerEmail = paymentData.payer?.email;
+  const externalReference = paymentData.external_reference;
+  const amount = paymentData.transaction_amount;
+  const paymentMethod = paymentData.payment_method_id;
+  
+  console.log('Payer email:', payerEmail);
+  console.log('External reference:', externalReference);
+  console.log('Amount:', amount);
+  console.log('Payment method:', paymentMethod);
+  
+  if (payerEmail) {
+    // Buscar usuário pelo email
+    const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
+    
+    if (!userError && userData.users) {
+      const user = userData.users.find((u: any) => u.email === payerEmail);
+      
+      if (user) {
+        console.log('✅ User found:', user.id);
+        
+        // Salvar registro do pagamento
+        const { error: paymentError, data: savedPayment } = await supabase
+          .from('payments')
+          .insert({
+            user_id: user.id,
+            payment_id: paymentData.id,
+            amount: amount,
+            status: 'approved',
+            payment_method: paymentMethod,
+            external_reference: externalReference,
+            payment_data: paymentData,
+            created_at: new Date().toISOString(),
+            processed_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        if (paymentError) {
+          console.error('❌ Error saving payment:', paymentError);
+          throw new Error('Failed to save payment');
+        } else {
+          console.log('✅ Payment saved successfully:', savedPayment);
+          
+          // Atualizar plano do usuário
+          const { error: updateError, data: updatedProfile } = await supabase
+            .from('user_profiles')
+            .upsert([{
+              user_id: user.id,
+              plan: 'premium',
+              plan_updated_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }], {
+              onConflict: 'user_id'
+            })
+            .select()
+            .single();
+          
+          if (updateError) {
+            console.error('❌ Error updating user plan:', updateError);
+            throw new Error('Failed to update user plan');
+          } else {
+            console.log('✅ User plan updated to premium:', updatedProfile);
+            
+            // Registrar log de upgrade
+            await supabase
+              .from('user_plan_logs')
+              .insert({
+                user_id: user.id,
+                from_plan: 'free',
+                to_plan: 'premium',
+                payment_id: paymentData.id,
+                amount: amount,
+                created_at: new Date().toISOString()
+              });
+            
+            console.log('✅ Plan upgrade logged successfully');
+          }
+        }
+      } else {
+        console.log('❌ User not found for email:', payerEmail);
+      }
+    } else {
+      console.error('❌ Error fetching users:', userError);
+    }
+  } else {
+    console.log('❌ No payer email found');
+  }
+}
+
+// Função para processar pagamento pendente
+async function handlePendingPayment(paymentData: any) {
+  console.log('⏳ Payment pending - No action required');
+  // Aqui você pode enviar notificação ao usuário sobre pagamento pendente
+}
+
+// Função para processar pagamento rejeitado
+async function handleRejectedPayment(paymentData: any) {
+  console.log('❌ Payment rejected - No action required');
+  // Aqui você pode enviar notificação ao usuário sobre pagamento rejeitado
+}
+
+// Função para processar pagamento cancelado
+async function handleCancelledPayment(paymentData: any) {
+  console.log('🚫 Payment cancelled - No action required');
+  // Aqui você pode enviar notificação ao usuário sobre pagamento cancelado
+}
 
 export { router as paymentsRoutes };
