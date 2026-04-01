@@ -35,19 +35,42 @@ const AuthCallback: React.FC = () => {
           expiresIn 
         });
 
-        // Se houver erro, mostrar mensagem e redirecionar
+        // Se houver erro, tentar tratamento específico
         if (error) {
           console.error('OAuth error:', error, errorDescription, errorCode);
           
           if (errorCode === 'bad_oauth_state') {
-            console.log('Bad OAuth state detected, redirecting to login...');
-            alert('Erro na autenticação. Por favor, tente fazer login novamente.');
-            navigate('/login');
+            console.log('Bad OAuth state detected - attempting recovery...');
+            
+            // Tentar recuperar sessão existente
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            
+            if (session?.user) {
+              console.log('Existing session found, redirecting to dashboard...');
+              navigate('/');
+              return;
+            }
+            
+            // Limpar storage e redirecionar para login com mensagem
+            localStorage.removeItem('auth_token');
+            sessionStorage.clear();
+            
+            const errorMessage = 'Sessão expirada. Por favor, faça login novamente.';
+            alert(errorMessage);
+            navigate('/login?error=session_expired');
+            return;
+          }
+          
+          // Para outros erros, também tentar recuperar sessão
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            console.log('Error occurred but session exists, redirecting...');
+            navigate('/');
             return;
           }
           
           alert(`Erro de autenticação: ${errorDescription || error}`);
-          navigate('/login');
+          navigate('/login?error=auth_failed');
           return;
         }
 
@@ -56,34 +79,78 @@ const AuthCallback: React.FC = () => {
           console.log('Access token found in hash, processing...');
           
           // Aguardar o Supabase processar a sessão automaticamente
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 2000));
           
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          // Tentar múltiplas vezes obter a sessão
+          let attempts = 0;
+          let session = null;
+          let sessionError = null;
+          
+          while (attempts < 3 && !session) {
+            const result = await supabase.auth.getSession();
+            session = result.data.session;
+            sessionError = result.error;
+            
+            if (!session && !sessionError) {
+              console.log(`Attempt ${attempts + 1}: No session yet, waiting...`);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            attempts++;
+          }
           
           if (sessionError) {
             console.error('Error getting session after OAuth:', sessionError);
             alert('Erro ao processar login. Tente novamente.');
-            navigate('/login');
+            navigate('/login?error=session_error');
             return;
           }
 
           if (session?.user) {
             console.log('Successfully authenticated:', session.user.email);
             console.log('Redirecting to dashboard...');
-            navigate('/'); // Redirecionar para a raiz que é o dashboard
+            
+            // Armazenar token para compatibilidade
+            if (session.access_token) {
+              localStorage.setItem('auth_token', session.access_token);
+            }
+            
+            // Redirecionar com sucesso
+            navigate('/?login_success=true');
           } else {
-            console.error('No session found after OAuth');
+            console.error('No session found after OAuth after multiple attempts');
             alert('Login não concluído. Tente novamente.');
-            navigate('/login');
+            navigate('/login?error=no_session');
           }
         } else {
           console.error('No access token found in callback');
-          navigate('/login');
+          
+          // Última tentativa: verificar se há sessão existente
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            console.log('No token but existing session found');
+            navigate('/');
+            return;
+          }
+          
+          navigate('/login?error=no_token');
         }
       } catch (error) {
         console.error('Callback error:', error);
+        
+        // Em caso de erro, tentar recuperar sessão existente
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            console.log('Error occurred but session exists, redirecting...');
+            navigate('/');
+            return;
+          }
+        } catch (recoveryError) {
+          console.error('Recovery failed:', recoveryError);
+        }
+        
         alert('Erro durante o processamento do login. Tente novamente.');
-        navigate('/login');
+        navigate('/login?error=callback_failed');
       } finally {
         console.log('=== AUTH CALLBACK: END ===');
       }
@@ -93,10 +160,12 @@ const AuthCallback: React.FC = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Processando autenticação...</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="text-center p-8">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-6"></div>
+        <h2 className="text-2xl font-semibold text-gray-800 mb-2">Processando autenticação...</h2>
+        <p className="text-gray-600">Estamos confirmando seu acesso à plataforma</p>
+        <p className="text-sm text-gray-500 mt-2">Isso pode levar alguns segundos</p>
       </div>
     </div>
   );

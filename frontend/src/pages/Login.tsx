@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, AlertCircle } from 'lucide-react';
 import { sanitizeInput } from '@/utils/inputValidation';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { SignInForm } from '@/components/auth/SignInForm';
@@ -15,10 +15,12 @@ import { useAuthForm } from '@/hooks/useAuthForm';
 const Login = () => {
   const { user, loading, signInWithGoogle, checkAuthStatus } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [isPasswordStrong, setIsPasswordStrong] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   
   const {
     formData,
@@ -27,6 +29,42 @@ const Login = () => {
     validateForm,
     resetForm
   } = useAuthForm();
+
+  // Tratar erros de autenticação da URL
+  useEffect(() => {
+    const error = searchParams.get('error');
+    const success = searchParams.get('login_success');
+    
+    if (error) {
+      const errorMessages: Record<string, string> = {
+        'session_expired': 'Sua sessão expirou. Por favor, faça login novamente.',
+        'auth_failed': 'Falha na autenticação. Tente novamente.',
+        'session_error': 'Erro ao processar sua sessão. Tente fazer login novamente.',
+        'no_session': 'Não foi possível estabelecer uma sessão. Tente novamente.',
+        'no_token': 'Token de autenticação não encontrado. Tente novamente.',
+        'callback_failed': 'Erro durante o processamento do login. Tente novamente.'
+      };
+      
+      const message = errorMessages[error] || 'Ocorreu um erro na autenticação. Tente novamente.';
+      setAuthError(message);
+      
+      // Limpar erro da URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+    
+    if (success) {
+      toast({
+        title: "Login realizado com sucesso!",
+        description: "Bem-vindo de volta à plataforma!",
+        variant: "default",
+      });
+      
+      // Limpar sucesso da URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [searchParams, toast]);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -226,6 +264,23 @@ const Login = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Alerta de Erro de Autenticação */}
+            {authError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-red-800">Erro de Autenticação</h3>
+                  <p className="text-sm text-red-700 mt-1">{authError}</p>
+                </div>
+                <button
+                  onClick={() => setAuthError(null)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+            
             <GoogleSignInButton
               onSignIn={handleGoogleSignIn}
               isLoading={isLoading}
