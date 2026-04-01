@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Calendar, Home, MessageSquare, Settings, Trophy, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BookOpen, Calendar, Home, MessageSquare, Settings, Trophy, User, Crown } from "lucide-react";
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProgressStats from "@/components/ProgressStats";
@@ -118,48 +119,42 @@ const Index = () => {
       
       <div className="container mx-auto px-2 md:px-4 py-4 md:py-8">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className={`grid w-full mb-6 md:mb-8 text-xs md:text-sm h-auto overflow-x-auto ${isAdmin ? 'grid-cols-4 md:grid-cols-7' : 'grid-cols-3 md:grid-cols-6'}`}>
-            <TabsTrigger value="dashboard" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Visão geral do seu progresso e atividades">
+          <TabsList className={`grid w-full mb-6 md:mb-8 text-xs md:text-sm h-auto overflow-x-auto ${isAdmin ? 'grid-cols-2 md:grid-cols-5' : 'grid-cols-2 md:grid-cols-4'}`}>
+            <TabsTrigger value="dashboard" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Seu progresso e próximos passos">
               <Home className="w-4 h-4" />
-              <span className="hidden sm:inline text-xs">Dashboard</span>
-              <span className="text-xs text-muted-foreground hidden lg:block">Progresso geral</span>
+              <span className="hidden sm:inline text-xs">Início</span>
+              <span className="text-xs text-muted-foreground hidden lg:block">Seu progresso</span>
             </TabsTrigger>
-            <TabsTrigger value="courses" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Explore todos os cursos disponíveis">
+            <TabsTrigger value="courses" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Explore cursos e aulas">
               <BookOpen className="w-4 h-4" />
-              <span className="hidden sm:inline text-xs">Cursos</span>
-              <span className="text-xs text-muted-foreground hidden lg:block">Conteúdo educacional</span>
-            </TabsTrigger>
-            <TabsTrigger value="trends" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Acompanhe as tendências em IA">
-              <Calendar className="w-4 h-4" />
-              <span className="hidden sm:inline text-xs">Tendências</span>
-              <span className="text-xs text-muted-foreground hidden lg:block">Novidades em IA</span>
+              <span className="hidden sm:inline text-xs">Aprender</span>
+              <span className="text-xs text-muted-foreground hidden lg:block">Cursos e aulas</span>
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="admin" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Gerenciar plataforma e usuários">
+              <TabsTrigger value="admin" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Gerenciar plataforma">
                 <Settings className="w-4 h-4" />
                 <span className="hidden md:inline text-xs">Admin</span>
                 <span className="text-xs text-muted-foreground hidden lg:block">Administração</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="badges" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Suas conquistas e certificados">
+            <TabsTrigger value="achievements" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Suas conquistas e perfil">
               <Trophy className="w-4 h-4" />
-              <span className="hidden sm:inline text-xs">Badges</span>
-              <span className="text-xs text-muted-foreground hidden lg:block">Conquistas</span>
+              <span className="hidden sm:inline text-xs">Conquistas</span>
+              <span className="text-xs text-muted-foreground hidden lg:block">Badges & Perfil</span>
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Configurações da sua conta">
-              <User className="w-4 h-4" />
-              <span className="hidden sm:inline text-xs">Perfil</span>
-              <span className="text-xs text-muted-foreground hidden lg:block">Minha conta</span>
-            </TabsTrigger>
-            <TabsTrigger value="support" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Obtenha ajuda e suporte">
+            <TabsTrigger value="support" className="flex flex-col items-center gap-1 md:gap-2 px-2 md:px-3 py-2 md:py-3" title="Ajuda e suporte premium">
               <MessageSquare className="w-4 h-4" />
-              <span className="hidden md:inline text-xs">Suporte</span>
-              <span className="text-xs text-muted-foreground hidden lg:block">Ajuda</span>
+              <span className="hidden sm:inline text-xs">Ajuda</span>
+              <span className="text-xs text-muted-foreground hidden lg:block">Suporte</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-8">
-            <WelcomeSection userProgress={userProgress} />
+            <WelcomeSection 
+              userProgress={userProgress} 
+              onUpgrade={() => setShowPremiumModal(true)}
+              canAccessPremium={canAccessPremium}
+            />
             <ProgressStats userProgress={userProgress} />
 
             {/* Continue Learning Section */}
@@ -168,17 +163,33 @@ const Index = () => {
                 <BookOpen className="w-6 h-6 text-blue-600" />
                 Continue Aprendendo
               </h2>
-              <ContinueLearning onLessonSelect={handleContinueLearningSelect} />
+              <ContinueLearning 
+              onLessonSelect={handleContinueLearningSelect}
+              onUpgrade={() => setShowPremiumModal(true)}
+            />
             </div>
 
-            <CoursesGrid courses={courses} onCourseSelect={handleCourseSelectWithTracking} />
+            <CoursesGrid 
+              courses={courses} 
+              onCourseSelect={handleCourseSelectWithTracking}
+              onUpgrade={() => setShowPremiumModal(true)}
+            />
           </TabsContent>
 
           <TabsContent value="courses" className="space-y-8">
             {coursesView === 'categories' && (
               <>
                 <div className="flex justify-between items-center">
-                  <h1 className="text-3xl font-bold">Cursos Disponíveis</h1>
+                  <h1 className="text-3xl font-bold">Aprender IA</h1>
+                  {!canAccessPremium && (
+                    <Button 
+                      onClick={() => setShowPremiumModal(true)}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Crown className="w-4 h-4 mr-2" />
+                      Desbloquear Premium
+                    </Button>
+                  )}
                 </div>
                 <CoursesByCategory onCourseSelect={handleCourseSelectWithTracking} />
               </>
@@ -207,30 +218,32 @@ const Index = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="trends">
-            <TrendsSection />
-          </TabsContent>
-
-          <TabsContent value="admin" className="space-y-8">
-            <AdminTabsContent 
-              isAdmin={isAdmin}
-              roleLoading={roleLoading}
-              adminView={adminView}
-              setAdminView={setAdminView}
-            />
-          </TabsContent>
-
-          <TabsContent value="profile">
-            <UserProfile />
-          </TabsContent>
-
-          <TabsContent value="badges">
-            <BadgesDisplay />
+          <TabsContent value="achievements" className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div>
+                <BadgesDisplay />
+              </div>
+              <div>
+                <UserProfile />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="support">
             <ChatSupport />
           </TabsContent>
+
+          {/* Admin Tab (se existir) */}
+          {isAdmin && (
+            <TabsContent value="admin" className="space-y-8">
+              <AdminTabsContent 
+                isAdmin={isAdmin}
+                roleLoading={roleLoading}
+                adminView={adminView}
+                setAdminView={setAdminView}
+              />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
       
