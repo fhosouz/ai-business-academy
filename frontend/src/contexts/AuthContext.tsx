@@ -1,10 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-);
+// Verificação de configuração
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Configuração do Supabase não encontrada');
+}
+
+const supabase = createClient(supabaseUrl || '', supabaseKey || '');
 
 interface User {
   id: string;
@@ -38,42 +43,90 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Verificar sessão via Supabase
-    checkAuthStatus();
+  // Função de limpeza completa de sessão
+  const clearAllAuthData = async () => {
+    console.log('=== CLEARING ALL AUTH DATA ===');
+    
+    try {
+      // Limpar Supabase sessão
+      await supabase.auth.signOut({ scope: 'global' });
+    } catch (error) {
+      console.log('Supabase signOut error (expected):', error);
+    }
+    
+    // Limpar storage local
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('supabase.auth.token');
+    localStorage.removeItem('supabase.auth.refreshToken');
+    sessionStorage.removeItem('supabase.auth.token');
+    sessionStorage.removeItem('supabase.auth.refreshToken');
+    
+    // Limpar cookies relacionados ao Supabase
+    document.cookie.split(";").forEach(c => {
+      const trimmedCookie = c.trim();
+      if (trimmedCookie.startsWith('supabase.auth.') || trimmedCookie.startsWith('sb-')) {
+        document.cookie = trimmedCookie + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+      }
+    });
+    
+    console.log('All auth data cleared');
+  };
 
-    // Escutar mudanças na autenticação
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('=== SUPABASE AUTH STATE CHANGE ===');
-        console.log('Event:', event);
-        console.log('Session exists:', !!session);
-        
-        if (session?.user) {
-          console.log('User authenticated:', session.user.email);
-          setUser({
-            id: session.user.id,
-            email: session.user.email!,
-            user_metadata: session.user.user_metadata
-          });
-          
-          // Armazenar token no localStorage para compatibilidade
-          if (session.access_token) {
-            localStorage.setItem('auth_token', session.access_token);
+  useEffect(() => {
+    const initializeAuth = async () => {
+      console.log('=== AUTH INITIALIZATION START ===');
+      
+      try {
+        // Verificar sessão via Supabase
+        await checkAuthStatus();
+
+        // Escutar mudanças na autenticação
+        const { data: authListener } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            console.log('=== SUPABASE AUTH STATE CHANGE ===');
+            console.log('Event:', event);
+            console.log('Session exists:', !!session);
+            
+            if (event === 'SIGNED_OUT') {
+              // Limpeza completa ao sair
+              await clearAllAuthData();
+              setUser(null);
+              setLoading(false);
+              return;
+            }
+            
+            if (session?.user) {
+              console.log('User authenticated:', session.user.email);
+              setUser({
+                id: session.user.id,
+                email: session.user.email!,
+                user_metadata: session.user.user_metadata
+              });
+              
+              // Armazenar token para compatibilidade
+              if (session.access_token) {
+                localStorage.setItem('auth_token', session.access_token);
+              }
+            } else {
+              console.log('User not authenticated');
+              setUser(null);
+              localStorage.removeItem('auth_token');
+            }
+            
+            setLoading(false);
           }
-        } else {
-          console.log('User not authenticated');
-          setUser(null);
-          localStorage.removeItem('auth_token');
-        }
-        
+        );
+
+        return () => {
+          authListener.subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error('Auth initialization error:', error);
         setLoading(false);
       }
-    );
-
-    return () => {
-      authListener.subscription.unsubscribe();
     };
+
+    initializeAuth();
   }, []);
 
   const checkAuthStatus = async () => {
@@ -117,8 +170,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Starting Google OAuth with Supabase...');
       console.log('Current origin:', window.location.origin);
       
-      // Limpar qualquer sessão existente antes de iniciar novo OAuth
-      await supabase.auth.signOut({ scope: 'global' });
+      // Limpeza completa antes de novo OAuth
+      await clearAllAuthData();
+      
+      // Aguardar um pouco para garantir limpeza
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -127,7 +183,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
-          }
+          },
+          skipBrowserRedirect: false
         }
       });
 
@@ -154,15 +211,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
-      localStorage.removeItem('auth_token');
+      await clearAllAuthData();
       setUser(null);
     } catch (error) {
       console.error('Error signing out:', error);
     }
   };
 
-  const value = {
+  const value: AuthContextType = {
     user,
     loading,
     signInWithGoogle,

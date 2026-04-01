@@ -7,13 +7,30 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Configuração do Supabase não encontrada. Verifique as variáveis de ambiente.');
+  console.error('Configuração do Supabase não encontrada. Verifique as variáveis de ambiente.');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl || '', supabaseKey || '');
 
 const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
+
+  // Função de limpeza completa
+  const clearAllData = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('supabase.auth.token');
+    localStorage.removeItem('supabase.auth.refreshToken');
+    sessionStorage.removeItem('supabase.auth.token');
+    sessionStorage.removeItem('supabase.auth.refreshToken');
+    
+    // Limpar cookies
+    document.cookie.split(";").forEach(c => {
+      const trimmedCookie = c.trim();
+      if (trimmedCookie.startsWith('supabase.auth.') || trimmedCookie.startsWith('sb-')) {
+        document.cookie = trimmedCookie + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+      }
+    });
+  };
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
@@ -48,18 +65,21 @@ const AuthCallback: React.FC = () => {
           if (errorCode === 'bad_oauth_state') {
             console.log('Bad OAuth state detected - attempting recovery...');
             
+            // Limpar todos os dados
+            clearAllData();
+            
             // Tentar recuperar sessão existente
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-            
-            if (session?.user) {
-              console.log('Existing session found, redirecting to dashboard...');
-              navigate('/');
-              return;
+            try {
+              const { data: { session } } = await supabase.auth.getSession();
+              
+              if (session?.user) {
+                console.log('Existing session found, redirecting to dashboard...');
+                navigate('/');
+                return;
+              }
+            } catch (sessionError) {
+              console.log('Session check failed:', sessionError);
             }
-            
-            // Limpar storage e redirecionar para login com mensagem
-            localStorage.removeItem('auth_token');
-            sessionStorage.clear();
             
             const errorMessage = 'Sessão expirada. Por favor, faça login novamente.';
             alert(errorMessage);
@@ -67,12 +87,18 @@ const AuthCallback: React.FC = () => {
             return;
           }
           
-          // Para outros erros, também tentar recuperar sessão
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            console.log('Error occurred but session exists, redirecting...');
-            navigate('/');
-            return;
+          // Para outros erros, limpar e tentar recuperar sessão
+          clearAllData();
+          
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+              console.log('Error occurred but session exists, redirecting...');
+              navigate('/');
+              return;
+            }
+          } catch (recoveryError) {
+            console.log('Session recovery failed:', recoveryError);
           }
           
           alert(`Erro de autenticação: ${errorDescription || error}`);
@@ -85,27 +111,32 @@ const AuthCallback: React.FC = () => {
           console.log('Access token found in hash, processing...');
           
           // Aguardar o Supabase processar a sessão automaticamente
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 3000));
           
           // Tentar múltiplas vezes obter a sessão
           let attempts = 0;
           let session = null;
           let sessionError = null;
           
-          while (attempts < 3 && !session) {
-            const result = await supabase.auth.getSession();
-            session = result.data.session;
-            sessionError = result.error;
-            
-            if (!session && !sessionError) {
-              console.log(`Attempt ${attempts + 1}: No session yet, waiting...`);
-              await new Promise(resolve => setTimeout(resolve, 1000));
+          while (attempts < 5 && !session) {
+            try {
+              const result = await supabase.auth.getSession();
+              session = result.data.session;
+              sessionError = result.error;
+              
+              if (!session && !sessionError) {
+                console.log(`Attempt ${attempts + 1}: No session yet, waiting...`);
+                await new Promise(resolve => setTimeout(resolve, 1500));
+              }
+            } catch (attemptError) {
+              console.log(`Attempt ${attempts + 1} error:`, attemptError);
             }
             attempts++;
           }
           
           if (sessionError) {
             console.error('Error getting session after OAuth:', sessionError);
+            clearAllData();
             alert('Erro ao processar login. Tente novamente.');
             navigate('/login?error=session_error');
             return;
@@ -124,18 +155,25 @@ const AuthCallback: React.FC = () => {
             navigate('/?login_success=true');
           } else {
             console.error('No session found after OAuth after multiple attempts');
+            clearAllData();
             alert('Login não concluído. Tente novamente.');
             navigate('/login?error=no_session');
           }
         } else {
           console.error('No access token found in callback');
           
-          // Última tentativa: verificar se há sessão existente
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            console.log('No token but existing session found');
-            navigate('/');
-            return;
+          // Limpar dados e tentar recuperar sessão existente
+          clearAllData();
+          
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+              console.log('No token but existing session found');
+              navigate('/');
+              return;
+            }
+          } catch (recoveryError) {
+            console.log('Session recovery failed:', recoveryError);
           }
           
           navigate('/login?error=no_token');
@@ -143,7 +181,10 @@ const AuthCallback: React.FC = () => {
       } catch (error) {
         console.error('Callback error:', error);
         
-        // Em caso de erro, tentar recuperar sessão existente
+        // Limpar todos os dados em caso de erro
+        clearAllData();
+        
+        // Tentar recuperar sessão existente
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
