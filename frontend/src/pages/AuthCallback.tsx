@@ -2,10 +2,15 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-);
+// Verificar configuração do Supabase
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Configuração do Supabase não encontrada. Verifique as variáveis de ambiente.');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +19,7 @@ const AuthCallback: React.FC = () => {
     const handleOAuthCallback = async () => {
       console.log('=== AUTH CALLBACK: START ===');
       console.log('Current URL:', window.location.href);
+      console.log('Supabase URL:', supabaseUrl);
       
       try {
         // Verificar se há erro nos query params
