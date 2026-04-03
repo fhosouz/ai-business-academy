@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 
 // Verificar configuração do Supabase
@@ -14,6 +14,7 @@ const supabase = createClient(supabaseUrl || '', supabaseKey || '');
 
 const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   // Função de limpeza completa
   const clearAllData = () => {
@@ -40,14 +41,179 @@ const AuthCallback: React.FC = () => {
       
       try {
         // Verificar se há erro nos query params
-        const urlParams = new URLSearchParams(window.location.search);
-        const error = urlParams.get('error');
-        const errorDescription = urlParams.get('error_description');
-        const errorCode = urlParams.get('error_code');
+        const error = searchParams.get('error');
+        const errorDescription = searchParams.get('error_description');
+        const errorCode = searchParams.get('error_code');
 
         // Verificar se há token no hash fragment (Supabase OAuth)
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        
+        // Verificar se há código de autorização (Backend OAuth)
+        const code = searchParams.get('code');
+        const state = searchParams.get('state');
+
+        console.log('OAuth params:', {
+          error,
+          code,
+          state,
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken
+        });
+
+        // Se há erro, redirecionar para login com mensagem
+        if (error) {
+          console.error('OAuth error:', error, errorDescription);
+          navigate(`/login?error=${error}&error_description=${errorDescription || 'Authentication failed'}`);
+          return;
+        }
+
+        // Se tem código de autorização (Backend OAuth)
+        if (code) {
+          console.log('Processing backend OAuth callback...');
+          await handleBackendOAuth(code, state);
+          return;
+        }
+
+        // Se tem access token (Supabase OAuth direto)
+        if (accessToken) {
+          console.log('Processing Supabase OAuth callback...');
+          await handleSupabaseOAuth(accessToken, refreshToken);
+          return;
+        }
+
+        // Se não tem nenhum parâmetro, verificar se há sessão existente
+        console.log('No OAuth params found, checking existing session...');
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          navigate('/login?error=session_error');
+          return;
+        }
+
+        if (session?.user) {
+          console.log('Found existing session:', session.user.email);
+          // Sessão já existe, redirecionar para dashboard
+          const userRole = session.user.user_metadata?.role || 'user';
+          const redirectTo = userRole === 'admin' ? '/admin' : '/';
+          navigate(redirectTo);
+          return;
+        }
+
+        // Se não encontrou nada, redirecionar para login
+        console.log('No session found, redirecting to login');
+        navigate('/login?error=no_session');
+
+      } catch (error) {
+        console.error('OAuth callback error:', error);
+        navigate('/login?error=callback_failed');
+      }
+    };
+
+    handleOAuthCallback();
+  }, [navigate, searchParams]);
+
+  const handleBackendOAuth = async (code: string, state?: string) => {
+    console.log('=== HANDLING BACKEND OAUTH ===');
+    
+    try {
+      // Trocar código por tokens com backend
+      const backendUrl = import.meta.env.VITE_API_URL || 'https://ai-business-academy-backend.onrender.com';
+      console.log('Exchanging code with backend:', backendUrl);
+      
+      const response = await fetch(`${backendUrl}/api/auth/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code,
+          state
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Backend OAuth response:', data);
+
+      if (data.user && data.session) {
+        // Criar sessão Supabase com os dados do backend
+        const { error: signInError } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+
+        if (signInError) {
+          console.error('Error setting Supabase session:', signInError);
+          throw new Error('Failed to establish session');
+        }
+
+        // Atualizar estado do usuário
+        const userRole = data.user.role || 'user';
+        console.log('User authenticated successfully:', data.user.email, 'Role:', userRole);
+
+        // Redirecionar para dashboard apropriado
+        const redirectTo = userRole === 'admin' ? '/admin' : '/';
+        navigate(redirectTo);
+      } else {
+        throw new Error('Invalid response from backend');
+      }
+
+    } catch (error) {
+      console.error('Backend OAuth error:', error);
+      navigate('/login?error=auth_failed');
+    }
+  };
+
+  const handleSupabaseOAuth = async (accessToken: string, refreshToken?: string) => {
+    console.log('=== HANDLING SUPABASE OAUTH ===');
+    
+    try {
+      // Criar sessão com tokens
+      const { data, error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken || ''
+      });
+
+      if (error) {
+        console.error('Error setting session:', error);
+        throw error;
+      }
+
+      if (data.user) {
+        console.log('Supabase OAuth successful:', data.user.email);
+        
+        // Redirecionar para dashboard apropriado
+        const userRole = data.user.user_metadata?.role || 'user';
+        const redirectTo = userRole === 'admin' ? '/admin' : '/';
+        navigate(redirectTo);
+      } else {
+        throw new Error('No user in session data');
+      }
+
+    } catch (error) {
+      console.error('Supabase OAuth error:', error);
+      navigate('/login?error=auth_failed');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Processando autenticação...</p>
+      </div>
+    </div>
+  );
+};
+
+export default AuthCallback;
         const refreshToken = hashParams.get('refresh_token');
         const expiresIn = hashParams.get('expires_in');
 

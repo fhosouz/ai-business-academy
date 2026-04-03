@@ -176,10 +176,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Aguardar um pouco para garantir limpeza
       await new Promise(resolve => setTimeout(resolve, 500));
       
+      // URL correta para callback
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      console.log('Redirect URL:', redirectTo);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectTo,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -193,19 +197,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error(`Erro na autenticação: ${error.message}`);
       }
 
-      console.log('OAuth URL generated:', data.url);
-      console.log('Redirecting to Google OAuth...');
+      console.log('OAuth initiated successfully');
+      console.log('=== AUTH CONTEXT: GOOGLE SIGN IN END ===');
     } catch (error) {
       console.error('Error signing in with Google:', error);
-      
-      // Se o erro for relacionado a popup bloqueado, tentar abordagem alternativa
-      if (error instanceof Error && error.message.includes('popup')) {
-        throw new Error('Por favor, permita popups para este site e tente novamente');
-      }
-      
-      throw new Error('Não foi possível realizar a autenticação. Tente novamente.');
-    } finally {
-      console.log('=== AUTH CONTEXT: GOOGLE SIGN IN END ===');
+      throw error;
     }
   };
 
