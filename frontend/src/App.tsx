@@ -7,7 +7,11 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
-import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute, { AdminRoute, PermissionRoute } from "./components/ProtectedRoute";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminAnalytics from "./pages/AdminAnalytics";
+import AdminCourses from "./pages/AdminCourses";
+import AdminManager from "./components/AdminManager";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailure from "./pages/PaymentFailure";
 import PaymentPending from "./pages/PaymentPending";
@@ -25,11 +29,36 @@ const App = () => (
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/failure" element={<PaymentFailure />} />
         <Route path="/payment/pending" element={<PaymentPending />} />
+        
+        {/* Rotas de Admin */}
+        <Route path="/admin" element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        } />
+        <Route path="/admin/analytics" element={
+          <AdminRoute>
+            <AdminAnalytics />
+          </AdminRoute>
+        } />
+        <Route path="/admin/courses" element={
+          <AdminRoute>
+            <AdminCourses />
+          </AdminRoute>
+        } />
+        <Route path="/admin/users" element={
+          <AdminRoute>
+            <AdminManager />
+          </AdminRoute>
+        } />
+        
+        {/* Rotas de Usuário (Aluno) */}
         <Route path="/" element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredRole="user">
             <Index />
           </ProtectedRoute>
         } />
+        
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>

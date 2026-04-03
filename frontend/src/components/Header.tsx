@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Search, User, LogOut } from "lucide-react";
+import { Search, User, LogOut, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserPlan } from "@/hooks/useUserPlan";
+import { useUserRole } from "@/hooks/useUserRole";
 import SearchComponent from "./SearchComponent";
 import NotificationBell from "./NotificationBell";
 import { useEffect } from "react";
@@ -17,6 +18,7 @@ interface HeaderProps {
 const Header = ({ onResultSelect }: HeaderProps) => {
   const { user, signOut } = useAuth();
   const { plan } = useUserPlan();
+  const { isAdmin, canViewAdminPanel } = useUserRole();
 
   console.log('=== HEADER RENDER ===');
   console.log('User:', user?.email);
@@ -160,6 +162,14 @@ const Header = ({ onResultSelect }: HeaderProps) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount sideOffset={5}>
+                  {/* Link Admin se for administrador */}
+                  {canViewAdminPanel() && (
+                    <DropdownMenuItem onClick={() => window.location.href = '/admin'}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Painel Admin</span>
+                    </DropdownMenuItem>
+                  )}
+                  
                   <DropdownMenuItem className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
