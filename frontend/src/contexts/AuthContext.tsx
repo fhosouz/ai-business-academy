@@ -167,7 +167,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithGoogle = async () => {
     console.log('=== AUTH CONTEXT: GOOGLE SIGN IN START ===');
     try {
-      console.log('Starting Google OAuth with Supabase...');
+      console.log('Starting Google OAuth with Backend...');
       console.log('Current origin:', window.location.origin);
       
       // Limpeza completa antes de novo OAuth
@@ -176,28 +176,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Aguardar um pouco para garantir limpeza
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // URL correta para callback
-      const redirectTo = `${window.location.origin}/auth/callback`;
-      console.log('Redirect URL:', redirectTo);
+      // Usar backend OAuth que já está configurado
+      const backendUrl = import.meta.env.VITE_API_URL || 'https://ai-business-academy-backend.onrender.com';
+      console.log('Redirecting to backend OAuth:', `${backendUrl}/api/auth/google`);
       
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectTo,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-          skipBrowserRedirect: false
-        }
-      });
-
-      if (error) {
-        console.error('OAuth error:', error);
-        throw new Error(`Erro na autenticação: ${error.message}`);
-      }
-
-      console.log('OAuth initiated successfully');
+      // Redirecionar para backend OAuth
+      window.location.href = `${backendUrl}/api/auth/google`;
+      
       console.log('=== AUTH CONTEXT: GOOGLE SIGN IN END ===');
     } catch (error) {
       console.error('Error signing in with Google:', error);
