@@ -167,7 +167,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithGoogle = async () => {
     console.log('=== AUTH CONTEXT: GOOGLE SIGN IN START ===');
     try {
-      console.log('Starting Google OAuth with Backend...');
+      console.log('Starting Google OAuth with multiple strategies...');
       console.log('Current origin:', window.location.origin);
       
       // Limpeza completa antes de novo OAuth
@@ -176,14 +176,51 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Aguardar um pouco para garantir limpeza
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Usar backend OAuth que já está configurado
+      // Tentar backend OAuth primeiro
       const backendUrl = import.meta.env.VITE_API_URL || 'https://ai-business-academy-backend.onrender.com';
-      console.log('Redirecting to backend OAuth:', `${backendUrl}/api/auth/google`);
+      console.log('Trying backend OAuth first:', `${backendUrl}/api/auth/google`);
       
-      // Redirecionar para backend OAuth
-      window.location.href = `${backendUrl}/api/auth/google`;
+      // Verificar se backend está disponível
+      try {
+        const response = await fetch(`${backendUrl}/api/health`, {
+          method: 'GET',
+          timeout: 5000
+        });
+        
+        if (response.ok) {
+          console.log('Backend is available, using backend OAuth');
+          window.location.href = `${backendUrl}/api/auth/google`;
+          return;
+        }
+      } catch (backendError) {
+        console.log('Backend not available, falling back to Supabase OAuth:', backendError);
+      }
       
+      // Fallback para Supabase OAuth direto
+      console.log('Using Supabase OAuth as fallback');
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      console.log('Redirect URL:', redirectTo);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+          skipBrowserRedirect: false
+        }
+      });
+
+      if (error) {
+        console.error('Supabase OAuth error:', error);
+        throw new Error(`Erro na autenticação: ${error.message}`);
+      }
+
+      console.log('Supabase OAuth initiated successfully');
       console.log('=== AUTH CONTEXT: GOOGLE SIGN IN END ===');
+      
     } catch (error) {
       console.error('Error signing in with Google:', error);
       throw error;
