@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { detectBrowserExtensions } from '@/utils/extensionCheck';
 
 // Verificação de configuração
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -169,6 +170,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('Starting Google OAuth with Supabase...');
       console.log('Current origin:', window.location.origin);
+      
+      // Verificar conflitos com extensões antes do OAuth
+      const extensionCheck = detectBrowserExtensions();
+      if (extensionCheck.hasIssues) {
+        console.warn('Extension conflicts detected:', extensionCheck.issues);
+        alert(`⚠️ Detectamos conflitos com extensões:\n\n${extensionCheck.issues.map(issue => `• ${issue.name}: ${issue.solution}`).join('\n')}\n\nPor favor, desative estas extensões e tente novamente.`);
+        return;
+      }
       
       // Limpeza completa antes de novo OAuth
       await clearAllAuthData();
