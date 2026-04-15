@@ -167,7 +167,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithGoogle = async () => {
     console.log('=== AUTH CONTEXT: GOOGLE SIGN IN START ===');
     try {
-      console.log('Starting Google OAuth with multiple strategies...');
+      console.log('Starting Google OAuth with Supabase...');
       console.log('Current origin:', window.location.origin);
       
       // Limpeza completa antes de novo OAuth
@@ -176,28 +176,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Aguardar um pouco para garantir limpeza
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Tentar backend OAuth primeiro
-      const backendUrl = import.meta.env.VITE_API_URL || 'https://ai-business-academy-backend.onrender.com';
-      console.log('Trying backend OAuth first:', `${backendUrl}/api/auth/google`);
-      
-      // Verificar se backend está disponível
-      try {
-        const response = await fetch(`${backendUrl}/api/health`, {
-          method: 'GET',
-          timeout: 5000
-        });
-        
-        if (response.ok) {
-          console.log('Backend is available, using backend OAuth');
-          window.location.href = `${backendUrl}/api/auth/google`;
-          return;
-        }
-      } catch (backendError) {
-        console.log('Backend not available, falling back to Supabase OAuth:', backendError);
-      }
-      
-      // Fallback para Supabase OAuth direto
-      console.log('Using Supabase OAuth as fallback');
+      // URL correta para callback
       const redirectTo = `${window.location.origin}/auth/callback`;
       console.log('Redirect URL:', redirectTo);
       
@@ -215,7 +194,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) {
         console.error('Supabase OAuth error:', error);
-        throw new Error(`Erro na autenticação: ${error.message}`);
+        
+        // Tratamento específico de erros comuns
+        if (error.message.includes('provider is disabled')) {
+          throw new Error('Google OAuth não está configurado. Por favor, contate o administrador.');
+        } else if (error.message.includes('Invalid redirect_url')) {
+          throw new Error('URL de redirecionamento inválida. Verifique a configuração.');
+        } else {
+          throw new Error(`Erro na autenticação: ${error.message}`);
+        }
       }
 
       console.log('Supabase OAuth initiated successfully');
